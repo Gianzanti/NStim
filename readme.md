@@ -34,10 +34,6 @@ Realizado usando o software UnicView AD, da Proculus, usando como LCD um Proculu
 |                         |        |           | 81 a 100 - 100%              |
 | Modo de Estímulo        | **7**  |   0 - 1   | 0 - Modo Cortical            |
 |                         |        |           | 1 - Modo Localização         |
-| Forma de Onda           | **9**  |   0 - 3   | 0 - Trem de Pulso            |
-|                         |        |           | 1 - Pulso                    |
-|                         |        |           | 2 - Bifásica Positiva        |
-|                         |        |           | 3 - Bifásica Negativa        |
 | Estado do Estímulo      | **11** |   0 - 1   | 0 - Estímulo em Pausa        |
 |                         |        |           | 1 - Estímulo em Progresso    |
 | Definição de Corrente   | **13** |  0 - 999  | Valor com ponto fixo         |
@@ -55,3 +51,10 @@ Realizado usando o software UnicView AD, da Proculus, usando como LCD um Proculu
 |                         |        |           | no modo Trem de Pulso        |
 | Intervalo               | **29** |  0 - 999  | Distância entre cada         |
 |                         |        |           | trem de pulsos               |
+| Corrente Mensurada      | **31** |  0 - 999  | em mA (miliAmperes)          |
+| Polos de Onda           | **33** |   0 - 1   | 0 - Monopolar                |
+|                         |        |           | 1 - Bipolar                  |
+| Fase de Onda            | **35** |   0 - 1   | 0 - Negativa                 |
+|                         |        |           | 1 - Positiva                 |
+| Trem de Pulso           | **37** |   0 - 1   | 0 - Pulso Único              |
+|                         |        |           | 1 - Trem de Pulso            |
