@@ -43,5 +43,10 @@ void setup() {
     Serial.begin(BAUD_RATE);
     delay(1000);
 
-    currentState = SETUP_DONE;
+    clearAllActions();
+    currentState = LOADING_FROM_EPROM;
+
+#if defined(DEBUG) && defined(DETAIL)
+    Serial.println("[INFO] NStim Setup Process Finished");
+#endif
 };

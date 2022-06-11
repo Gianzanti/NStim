@@ -36,12 +36,6 @@ void clearAllActions() {
     rtrEncoder->clearAllActions();
 }
 
-void stopStimulation() {
-    STIM_ON = false;
-    setSlave(SET_STIM_ON, STIM_ON);
-    greenLED();
-};
-
 void increaseCurrentAtStimulus() {
     if (STIM_CURRENT + 1 <= STIM_CURRENT_MAX) {
         STIM_CURRENT += 1;
@@ -76,36 +70,36 @@ void decreaseCurrentAtStimulus() {
     }
 };
 
-void startStimulation() {
-    blueLED();
-    STIM_ON = true;
-
-#if defined(LCM_ENABLED)
-    VP_StimulusState.write(STIM_ON);
-#endif
-
-    setSlave(SET_STIM_ON, STIM_ON);
-};
+void setNextState(byte next) {
+    nextState = next;
+}
 
 void monitorSlave() {
     askSlave(READ_STIM_MEASURED_CURRENT);
     //  askSlave(READ_STIM_MEASURED_IMPEDANCE);
     //  askSlave(READ_STIM_MEASURED_BATTERY);
     //  askSlave(READ_STIM_ERROR);
+
+    // MONITORAR TODAS AS VARIÁVEIS DE UMA ÚNICA VEZ, MANDAR CASO ATUALIZADO JÁ PARA O DISPLAY E CHECAR SE TEM ERRO
+    // COLOCAR ESSA ROTINA NO LOOP PRINCIPAL E CHECAR QUAIS VARIÁVEIS TRATAR, CONFORME O ESTADO ATUAL
+
+    //#if defined(LCM_ENABLED)
+    //    VP_StimulusState.write(STIM_ON);
+    ////    VP_SetCurrent.write(STIM_CURRENT);
+    ////    VP_SetPeriod.write(1 / STIM_FREQUENCY);
+    ////    VP_SetFrequency.write(STIM_FREQUENCY);
+    //
+    ////    VP_ErrorControl.write(STIM_ERROR);
+    ////    VP_BatteryLevel.write(STIM_MEASURED_BATTERY);
+    //    VP_MeasuredImpedance.write(STIM_MEASURED_IMPEDANCE);
+    //    VP_MeasuredCurrent.write(STIM_MEASURED_CURRENT);
+    //    VP_MeasuredCharge.write(0);
+    //#endif
+
+    //    if (STIM_ERROR != 0) {
+    //        currentState = WITH_ERROR;
+    //    }
 }
-
-void startConfig() {
-    whiteLED();
-    STIM_ON = false;
-    setSlave(SET_STIM_ON, STIM_ON);
-
-    STIM_CONFIG = true;
-    STIM_CURRENT_SCREEN = SCREEN_CONFIG_WAVE_POLE;
-
-#if defined(LCM_ENABLED)
-    VP_StimulusState.write(STIM_ON);
-#endif
-};
 
 void changeWavePole() {
     STIM_BIPOLAR = !STIM_BIPOLAR;
@@ -124,21 +118,6 @@ void changeWavePole() {
         Serial.println(F("[CHANGE] Changed Wave Pole to Monopolar"));
     }
 #endif
-}
-
-void nextWaveConfig() {
-    if (STIM_CURRENT_SCREEN + 1 <= SCREEN_CONFIG_WAVE_EXIT) {
-        STIM_CURRENT_SCREEN += 1;
-    } else {
-        STIM_CURRENT_SCREEN = SCREEN_CONFIG_WAVE_POLE;
-    }
-
-    if (STIM_CURRENT_SCREEN == SCREEN_CONFIG_WAVE_TRAIN_PULSES && !STIM_TRAIN) {
-        STIM_CURRENT_SCREEN = SCREEN_CONFIG_WAVE_EXIT;
-#if defined(DEBUG)
-        Serial.println(F("[INFO] Getting back to Config Wave Train"));
-#endif
-    }
 }
 
 void changeWavePhase() {
@@ -176,14 +155,6 @@ void changeWaveTrain() {
     }
 #endif
 };
-
-void configCurrent() {
-    STIM_CURRENT_SCREEN = SCREEN_CONFIG_CURRENT;
-}
-
-void configPeriod() {
-    STIM_CURRENT_SCREEN = SCREEN_CONFIG_PERIOD;
-}
 
 void increaseCurrentAtConfig() {
     if (STIM_CURRENT + 1 <= STIM_CURRENT_MAX) {
@@ -229,54 +200,46 @@ void setCurrentAtConfig() {
 #endif
 };
 
-void configFrequency() {
-    STIM_CURRENT_SCREEN = SCREEN_CONFIG_FREQUENCY;
-}
-
 void increasePeriodAtConfig() {
-    if (STIM_PULSE_WIDTH + 1 <= STIM_PERIOD_MAX) {
-        STIM_PULSE_WIDTH += 1;
+    if (STIM_PERIOD + 1 <= STIM_PERIOD_MAX) {
+        STIM_PERIOD += 1;
 
 #if defined(LCM_ENABLED)
-        VP_SetPeriod.write(STIM_PULSE_WIDTH);
+        VP_SetPeriod.write(STIM_PERIOD);
 #endif
 
 #if defined(DEBUG)
-        Serial.println("[CHANGE] Increased Period to: " + String(STIM_PULSE_WIDTH));
+        Serial.println("[CHANGE] Increased Period to: " + String(STIM_PERIOD));
 #endif
     }
 };
 
 void decreasePeriodAtConfig() {
-    if (STIM_PULSE_WIDTH - 1 >= STIM_PERIOD_MIN) {
-        STIM_PULSE_WIDTH -= 1;
+    if (STIM_PERIOD - 1 >= STIM_PERIOD_MIN) {
+        STIM_PERIOD -= 1;
 
 #if defined(LCM_ENABLED)
-        VP_SetPeriod.write(STIM_PULSE_WIDTH);
+        VP_SetPeriod.write(STIM_PERIOD);
 #endif
 
 #if defined(DEBUG)
-        Serial.println("[CHANGE] Increased Period to: " + String(STIM_PULSE_WIDTH));
+        Serial.println("[CHANGE] Increased Period to: " + String(STIM_PERIOD));
 #endif
     }
 };
 
 void setPeriodAtConfig() {
 #if defined(LCM_ENABLED)
-    VP_SetPeriod.write(STIM_PULSE_WIDTH);
+    VP_SetPeriod.write(STIM_PERIOD);
 #endif
 
-    EEPROM.write(PULSE_WIDTH_ADDRESS, STIM_PULSE_WIDTH);
-    setSlave(SET_STIM_PULSE_WIDTH, STIM_PULSE_WIDTH);
+    EEPROM.write(PULSE_WIDTH_ADDRESS, STIM_PERIOD);
+    setSlave(SET_STIM_PERIOD, STIM_PERIOD);
 
 #if defined(DEBUG)
-    Serial.println("[SET] Set Period to: " + String(STIM_PULSE_WIDTH));
+    Serial.println("[SET] Set Period to: " + String(STIM_PERIOD));
 #endif
 };
-
-void configGeneral() {
-    STIM_CURRENT_SCREEN = SCREEN_CONFIG_GENERAL_USER;
-}
 
 void increaseFrequencyAtConfig() {
     if (STIM_FREQUENCY + 1 <= STIM_FREQUENCY_MAX) {
@@ -387,58 +350,26 @@ void decreaseInterval() {
     }
 }
 
-void exitWaveConfig() {
-    STIM_CURRENT_SCREEN = SCREEN_READY;
-}
-
-void getReady() {
-    STIM_CURRENT_SCREEN = SCREEN_READY;
-}
-
-void changeGeneralConfig() {
-    if (STIM_CURRENT_SCREEN + 1 <= SCREEN_CONFIG_GENERAL_MODE) {
-        STIM_CURRENT_SCREEN += 1;
-    } else {
-        STIM_CURRENT_SCREEN = SCREEN_CONFIG_GENERAL_USER;
-    }
-};
-
-void enterConfigUser() {
-    STIM_CURRENT_SCREEN = SCREEN_CONFIG_GENERAL_USER_LANG;
-}
-
-void enterConfigMode() {
-    STIM_CURRENT_SCREEN = CONFIG_GENERAL_MODE_CORTICAL;
-}
-
 void changeLanguage() {
-    STIM_LANGUAGE = !STIM_LANGUAGE;
+    STIM_LANG_ENGLISH = !STIM_LANG_ENGLISH;
 #if defined(LCM_ENABLED)
-    VP_Language.write(STIM_LANGUAGE);
-    if (!STIM_LANGUAGE) {
+    VP_Language.write(STIM_LANG_ENGLISH);
+    if (!STIM_LANG_ENGLISH) {
         Lcm.changePicId(PID_BR_CONFIG_GENERAL_USER_LANG);
     } else {
         Lcm.changePicId(PID_EN_CONFIG_GENERAL_USER_LANG);
     }
 #endif
 
-    EEPROM.write(LANGUAGE_ADDRESS, STIM_LANGUAGE);
+    EEPROM.write(LANGUAGE_ADDRESS, STIM_LANG_ENGLISH);
 
 #if defined(DEBUG)
-    if (!STIM_LANGUAGE) {
-        Serial.println(F("[CHANGE] Changed Language to Portugese"));
+    if (!STIM_LANG_ENGLISH) {
+        Serial.println(F("[CHANGE] Changed Language to Portuguese"));
     } else {
         Serial.println(F("[CHANGE] Changed Language to English"));
     }
 #endif
-}
-
-void enterVolumeSetting() {
-    STIM_CURRENT_SCREEN = CONFIG_GENERAL_USER_SOUND;
-}
-
-void enterBackLightSetting() {
-    STIM_CURRENT_SCREEN = CONFIG_GENERAL_USER_BACKLIGHT;
 }
 
 void increaseSoundLevel() {
@@ -472,10 +403,6 @@ void decreaseSoundLevel() {
 #endif
     }
 };
-
-void enterUserSettingExit() {
-    STIM_CURRENT_SCREEN = CONFIG_GENERAL_USER_EXIT;
-}
 
 void increaseBacklight() {
     if (STIM_BACKLIGHT + 1 <= STIM_BACKLIGHT_MAX) {
@@ -511,6 +438,30 @@ void decreaseBacklight() {
     }
 };
 
-void enterGeneralMode() {
-    STIM_CURRENT_SCREEN = SCREEN_CONFIG_GENERAL_MODE;
+void setCorticalMode() {
+    STIM_CORTICAL = true;
+
+#if defined(LCM_ENABLED)
+    VP_StimulusMode.write(STIM_CORTICAL);
+#endif
+
+    EEPROM.write(TYPE_CORTICAL_ADDRESS, STIM_CORTICAL);
+
+#if defined(DEBUG)
+    Serial.println(F("[CHANGE] Changed Stimulation Mode to Cortical"));
+#endif
+}
+
+void setLocalizationMode() {
+    STIM_CORTICAL = false;
+
+#if defined(LCM_ENABLED)
+    VP_StimulusMode.write(STIM_CORTICAL);
+#endif
+
+    EEPROM.write(TYPE_CORTICAL_ADDRESS, STIM_CORTICAL);
+
+#if defined(DEBUG)
+    Serial.println(F("[CHANGE] Changed Stimulation Mode to Localization"));
+#endif
 }

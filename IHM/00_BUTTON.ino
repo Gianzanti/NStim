@@ -7,8 +7,10 @@ class Button {
     int lastState;
     int pin;
     unsigned long dbDelay;
-    void (*btnActionDown)(void) = NULL;
-    void (*btnActionUp)(void) = NULL;
+    void (*btnActionDown)(byte) = NULL;
+    void (*btnActionUp)(byte) = NULL;
+    byte argDown = NULL;
+    byte argUp = NULL;
 
    public:
     Button(int btnPin, unsigned long debounceDelay = DEFAULT_DELAY) {
@@ -37,35 +39,39 @@ class Button {
 #endif
 
                 if (state == HIGH && btnActionUp != NULL) {
-                    btnActionUp();
+                    btnActionUp(argUp);
                 }
 
                 if (state == LOW && btnActionDown != NULL) {
-                    btnActionDown();
+                    btnActionDown(argDown);
                 }
             }
         }
         lastState = reading;
     }
 
-    void setActionDown(void (*func)()) {
+    void setActionDown(void (*func)(byte), byte arg = NULL) {
         if (func != NULL) {
             btnActionDown = func;
+            argDown = arg;
         }
     }
 
-    void setActionUp(void (*func)()) {
+    void setActionUp(void (*func)(byte), byte arg = NULL) {
         if (func != NULL) {
             btnActionUp = func;
+            argUp = arg;
         }
     }
 
     void clearActionUp() {
         btnActionUp = NULL;
+        argUp = NULL;
     }
 
     void clearActionDown() {
         btnActionDown = NULL;
+        argDown = NULL;
     }
 
     void clearAllActions() {

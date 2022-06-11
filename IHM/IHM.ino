@@ -127,7 +127,7 @@
 #define TRAIN_INTERVAL_ADDRESS 0x0D
 
 // I2C COMMUNICATION - BYTE READ REGISTERS
-#define READ_STIM_ON 0x01                  // 1: stimulation is on | 0: stimulation is off
+#define READ_STIMULATOR_STATE 0x01         // 1: stimulation is on | 0: stimulation is off
 #define READ_STIM_FREQUENCY 0x02           // 0 - 100: operation frequency (Hz)
 #define READ_STIM_PULSE_WIDTH 0x03         // 0 - 100: pulse width (s)
 #define READ_STIM_BIPOLAR 0x04             // 0: monopolar mode | 1: bipolar mode
@@ -158,7 +158,6 @@
 
 // STATES
 #define NONE 0x01
-#define SETUP_DONE 0x02
 #define INITIAL_STATE 0x03
 #define LOAD_FROM_EPROM 0x04
 #define LOADING_FROM_EPROM 0x05
@@ -190,29 +189,6 @@
 #define CONFIG_GENERAL_MODE_EXIT 0x1F
 #define CONFIG_GENERAL_EXIT 0x20
 
-// SCREENS
-#define SCREEN_READY 0x00
-#define SCREEN_CONFIG_WAVE_POLE 0x01
-#define SCREEN_CONFIG_WAVE_PHASE 0x02
-#define SCREEN_CONFIG_WAVE_TRAIN 0x03
-#define SCREEN_CONFIG_WAVE_TRAIN_PULSES 0x04
-#define SCREEN_CONFIG_WAVE_TRAIN_INTERVAL 0x05
-#define SCREEN_CONFIG_WAVE_TRAIN_EXIT 0x06
-#define SCREEN_CONFIG_WAVE_EXIT 0x07
-#define SCREEN_CONFIG_CURRENT 0x08
-#define SCREEN_CONFIG_PERIOD 0x09
-#define SCREEN_CONFIG_FREQUENCY 0x0A
-#define SCREEN_CONFIG_GENERAL_USER 0x0B
-#define SCREEN_CONFIG_GENERAL_MODE 0x0C
-#define SCREEN_CONFIG_GENERAL_USER_LANG 0x0D
-#define SCREEN_CONFIG_GENERAL_USER_SOUND 0x0E
-#define SCREEN_CONFIG_GENERAL_USER_BACKLIGHT 0x0F
-#define SCREEN_CONFIG_GENERAL_USER_EXIT 0x11
-#define SCREEN_CONFIG_GENERAL_MODE_CORTICAL 0x12
-#define SCREEN_CONFIG_GENERAL_MODE_LOCALIZATION 0x13
-#define SCREEN_CONFIG_GENERAL_MODE_EXIT 0x14
-#define SCREEN_CONFIG_GENERAL_EXIT 0x15
-
 // GLOBAL VARIABLES
 #if defined(LCM_ENABLED)
 SoftwareSerial softSerial(SOFT_RX, SOFT_TX);
@@ -240,13 +216,14 @@ LcmVar VP_TrainEnabled(37);
 
 byte currentState = NONE;
 byte lastState = NONE;
+byte nextState = NONE;
 
 bool STIM_ON = false;
 bool STIM_BIPOLAR = false;
 bool STIM_TRAIN = false;
 bool STIM_NEGATIVE_PHASE = false;
 bool STIM_CORTICAL = false;
-bool STIM_LANGUAGE = false;  // 0 - PORTUGUESE | 1 - ENGLISH
+bool STIM_LANG_ENGLISH = false;  // 0 - PORTUGUESE | 1 - ENGLISH
 bool STIM_CONFIG = false;
 
 unsigned int STIM_FREQUENCY = 50;
@@ -261,13 +238,3 @@ unsigned int STIM_MEASURED_CURRENT = 0;
 unsigned int STIM_MEASURED_IMPEDANCE = 0;
 unsigned int STIM_MEASURED_BATTERY = 0;
 byte STIM_ERROR = 0;
-
-byte STIM_CURRENT_SCREEN = 0;
-
-bool EEPROM_READ = false;
-
-/**
- * Botão VERDE: inicia estímulo
- * Botão VERMELHO: para estímulo
- * Botão AZUL: Pular entre as funções
- */

@@ -1,7 +1,9 @@
 class Rotary {
    private:
-    void (*rotaryActionCCW)(int) = NULL;
-    void (*rotaryActionCW)(int) = NULL;
+    void (*rotaryActionCCW)(byte) = NULL;
+    void (*rotaryActionCW)(byte) = NULL;
+    byte argCCW = NULL;
+    byte argCW = NULL;
 
     unsigned long dbDelay;
     unsigned long lastDebounceTime;
@@ -38,7 +40,7 @@ class Rotary {
                     Serial.println(F("[INFO] Rotating clockwise"));
 #endif
                     if (rotaryActionCW != NULL) {
-                        rotaryActionCW(encoder_direction);
+                        rotaryActionCW(argCW);
                     }
                 } else {
                     encoder_direction = -1;  // CCW
@@ -46,7 +48,7 @@ class Rotary {
                     Serial.println(F("[INFO] Rotating counter clockwise"));
 #endif
                     if (rotaryActionCCW != NULL) {
-                        rotaryActionCCW(encoder_direction);
+                        rotaryActionCCW(argCCW);
                     }
                 }
             }
@@ -54,24 +56,28 @@ class Rotary {
         }
     }
 
-    void setActionCW(void (*func)(int)) {
+    void setActionCW(void (*func)(byte), byte arg = NULL) {
         if (func != NULL) {
             rotaryActionCW = func;
+            argCW = arg;
         }
     }
 
-    void setActionCCW(void (*func)(int)) {
+    void setActionCCW(void (*func)(byte), byte arg = NULL) {
         if (func != NULL) {
             rotaryActionCCW = func;
+            argCCW = arg;
         }
     }
 
     void clearActionCW() {
         rotaryActionCW = NULL;
+        argCW = NULL;
     }
 
     void clearActionCCW() {
         rotaryActionCCW = NULL;
+        argCCW = NULL;
     }
 
     void clearAllActions() {

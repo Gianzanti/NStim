@@ -20,7 +20,7 @@ void readConfigFromEEPROM() {
     // READ PULSE WIDTH
     valueRead = EEPROM.read(PULSE_WIDTH_ADDRESS);
     if (valueRead > 0 && valueRead < 100) {
-        STIM_PULSE_WIDTH = valueRead;
+        STIM_PERIOD = valueRead;
 #if defined(DEBUG) && defined(DETAIL)
         Serial.print("PULSE WIDTH: [ADD:" + String(PULSE_WIDTH_ADDRESS) + "]:");
         Serial.print("\t");
@@ -30,8 +30,8 @@ void readConfigFromEEPROM() {
 
     } else {
         // setting default value
-        STIM_PULSE_WIDTH = 50;
-        EEPROM.write(PULSE_WIDTH_ADDRESS, STIM_PULSE_WIDTH);
+        STIM_PERIOD = 50;
+        EEPROM.write(PULSE_WIDTH_ADDRESS, STIM_PERIOD);
     }
 
     // READ CURRENT
@@ -151,7 +151,7 @@ void readConfigFromEEPROM() {
     // READ LANGUAGE
     valueRead = EEPROM.read(LANGUAGE_ADDRESS);
     if (valueRead == 0 || valueRead == 1) {
-        STIM_LANGUAGE = (valueRead == 1);
+        STIM_LANG_ENGLISH = (valueRead == 1);
 #if defined(DEBUG) && defined(DETAIL)
         Serial.print("LANGUAGE: [ADD:" + String(LANGUAGE_ADDRESS) + "]:");
         Serial.print("\t");
@@ -160,8 +160,8 @@ void readConfigFromEEPROM() {
 #endif
     } else {
         // setting default value
-        STIM_LANGUAGE = 0;
-        EEPROM.write(LANGUAGE_ADDRESS, STIM_LANGUAGE);
+        STIM_LANG_ENGLISH = 0;
+        EEPROM.write(LANGUAGE_ADDRESS, STIM_LANG_ENGLISH);
     }
 
     // READ SOUND LEVEL
@@ -197,5 +197,6 @@ void readConfigFromEEPROM() {
         EEPROM.write(BACKLIGHT_ADDRESS, STIM_BACKLIGHT);
     }
 
-    EEPROM_READ = true;
+    // allow change in the current state
+    nextState = SET_SLAVE_STATE;
 }
