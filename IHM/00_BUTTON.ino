@@ -33,7 +33,7 @@ class Button {
                 state = reading;
 
 #if defined(DEBUG) && defined(DETAIL)
-                  Serial.println("[INFO] Button at " + String(pin) + " | State: " + String(state));
+                Serial.println("[INFO] Button at " + String(pin) + " | State: " + String(state));
 #endif
 
                 if (state == HIGH && btnActionUp != NULL) {
@@ -61,18 +61,17 @@ class Button {
     }
 
     void clearActionUp() {
-      btnActionUp = NULL;
+        btnActionUp = NULL;
     }
 
     void clearActionDown() {
-      btnActionDown = NULL;
+        btnActionDown = NULL;
     }
 
     void clearAllActions() {
-      clearActionUp();
-      clearActionDown();
+        clearActionUp();
+        clearActionDown();
     }
-
 };
 
 Button *btnGreen = new Button(BTN_START);      // GREEN BUTTON

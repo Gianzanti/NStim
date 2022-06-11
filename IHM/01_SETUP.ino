@@ -31,8 +31,8 @@ void setup() {
     delay(1000);
     Lcm.begin();
     delay(3000);
-   int version = Lcm.readFirmwareVersion();
-   Lcm.changePicId(PID_INTRO);
+    int version = Lcm.readFirmwareVersion();
+    Lcm.changePicId(PID_INTRO);
 
 #if defined(DEBUG) && defined(DETAIL)
     Serial.println("[INFO] LCM Firmware version:" + String(version));

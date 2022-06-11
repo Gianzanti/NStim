@@ -67,16 +67,16 @@ class Rotary {
     }
 
     void clearActionCW() {
-      rotaryActionCW = NULL;
+        rotaryActionCW = NULL;
     }
 
     void clearActionCCW() {
-      rotaryActionCCW = NULL;
+        rotaryActionCCW = NULL;
     }
 
     void clearAllActions() {
-      clearActionCW();
-      clearActionCCW();
+        clearActionCW();
+        clearActionCCW();
     }
 };
 
