@@ -5,6 +5,7 @@ void loop() {
     btnEncoder->loop();
     rtrEncoder->loop();
     stateLoop();
+    screenMonitor();
 
     //  // *******************************************************************************************************************************************
     //  // * Seleção do tipo de controle do servo
@@ -19,7 +20,7 @@ void loop() {
     //    { // "ledButton" é igual a ledOn
     //      debugPrintln("turn on led...");
     //      digitalWrite(LED_3, LOW); // Liga o LED
-    //      // Lcm.changePicId(0);
+    //      // currentScreen = 0);
     //      // delay(1000);
     //    }
     //    if (LED_estado == LOW)

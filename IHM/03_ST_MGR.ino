@@ -1,6 +1,5 @@
 void ST_LOADING_FROM_EPROM() {
     if (currentState != lastState) {
-        // ENTERING THE STATE, DO INITIALIZATION STUFF
         lastState = currentState;
 
 #if defined(DEBUG) && defined(DETAIL)
@@ -9,35 +8,6 @@ void ST_LOADING_FROM_EPROM() {
         readConfigFromEEPROM();
     }
 
-    // CHECK FOR STATE TRANSITIONS
-    if (nextState != currentState) {
-        currentState = nextState;
-    }
-}
-
-void ST_SET_SLAVE_STATE() {
-    if (currentState != lastState) {
-        lastState = currentState;
-
-#if defined(DEBUG) && defined(DETAIL)
-        Serial.println("[INFO] Setting Slave Unit");
-#endif
-
-        STIM_ON = false;
-        setSlave(SET_STIM_ON, STIM_ON);
-        setSlave(SET_STIM_FREQUENCY, STIM_FREQUENCY);
-        setSlave(SET_STIM_PULSE_WIDTH, STIM_PULSE_WIDTH);
-        setSlave(SET_STIM_BIPOLAR, STIM_BIPOLAR);
-        setSlave(SET_STIM_TRAIN, STIM_TRAIN);
-        setSlave(SET_STIM_TRAIN_COUNT, STIM_TRAIN_COUNT);
-        setSlave(READ_STIM_NEGATIVE_PHASE, STIM_NEGATIVE_PHASE);
-        setSlave(SET_STIM_TYPE_CORTICAL, STIM_CORTICAL);
-        setSlave(SET_STIM_CURRENT, STIM_CURRENT);
-
-        nextState = MOUNT_SCREEN;
-    }
-
-    // CHECK FOR STATE TRANSITIONS
     if (nextState != currentState) {
         currentState = nextState;
     }
@@ -46,6 +16,7 @@ void ST_SET_SLAVE_STATE() {
 void ST_MOUNT_SCREEN() {
     if (currentState != lastState) {
         lastState = currentState;
+
 #if defined(DEBUG) && defined(DETAIL)
         Serial.println("[INFO] Mounting Screen");
 #endif
@@ -61,7 +32,7 @@ void ST_MOUNT_SCREEN() {
         VP_Backlight.write(STIM_BACKLIGHT);
         Lcm.changeBacklight(STIM_BACKLIGHT);
         VP_TrainPulses.write(STIM_TRAIN_COUNT);
-        VP_TrainInterval.write(STIM_PULSE_WIDTH);
+        VP_TrainInterval.write(STIM_TRAIN_INTERVAL);
         VP_WaveBipolar.write(STIM_BIPOLAR);
         VP_WavePhase.write(STIM_NEGATIVE_PHASE);
         VP_TrainEnabled.write(STIM_TRAIN);
@@ -70,13 +41,14 @@ void ST_MOUNT_SCREEN() {
         VP_BatteryLevel.write(STIM_MEASURED_BATTERY);
         VP_MeasuredImpedance.write(STIM_MEASURED_IMPEDANCE);
         VP_MeasuredCurrent.write(STIM_MEASURED_CURRENT);
-        VP_MeasuredCharge.write(0);
+        VP_MeasuredCharge.write(STIM_MEASURED_CHARGE);
 
         if (!STIM_LANG_ENGLISH) {
-            Lcm.changePicId(PID_BR_MAIN);
+            currentScreen = PID_BR_MAIN;
         } else {
-            Lcm.changePicId(PID_EN_MAIN);
+            currentScreen = PID_EN_MAIN;
         }
+        Lcm.changePicId(currentScreen);
 #endif
 
         nextState = READY;
@@ -100,9 +72,6 @@ void ST_READY() {
 #endif
     }
 
-    // PERFORM STATE TASKS
-
-    // CHECK FOR STATE TRANSITIONS
     if (nextState != currentState) {
         currentState = nextState;
     }
@@ -122,46 +91,18 @@ void ST_STIMULATING() {
 #if defined(LCM_ENABLED)
         VP_StimulusState.write(STIM_ON);
 #endif
-        setSlave(SET_STIM_ON, STIM_ON);
 
 #if defined(DEBUG)
         Serial.println(F("[INFO] Stimulating"));
 #endif
     }
 
-    // PERFORM STATE TASKS
-    monitorSlave();
-
-    //#if defined(LCM_ENABLED)
-    //    VP_StimulusState.write(STIM_ON);
-    ////    VP_SetCurrent.write(STIM_CURRENT);
-    ////    VP_SetPeriod.write(1 / STIM_FREQUENCY);
-    ////    VP_SetFrequency.write(STIM_FREQUENCY);
-    //
-    ////    VP_ErrorControl.write(STIM_ERROR);
-    ////    VP_BatteryLevel.write(STIM_MEASURED_BATTERY);
-    //    VP_MeasuredImpedance.write(STIM_MEASURED_IMPEDANCE);
-    //    VP_MeasuredCurrent.write(STIM_MEASURED_CURRENT);
-    //    VP_MeasuredCharge.write(0);
-    //#endif
-
-    // CHECK FOR STATE TRANSITIONS
-    //    if (STIM_ON == false) {
-    //        currentState = READY;
-    //    }
-
-    //    if (STIM_ERROR != 0) {
-    //        currentState = WITH_ERROR;
-    //    }
-
-    // CHECK FOR STATE TRANSITIONS
     if (nextState != currentState) {
         currentState = nextState;
     }
 
     if (currentState != lastState) {
         STIM_ON = false;
-        setSlave(SET_STIM_ON, STIM_ON);
 
 #if defined(LCM_ENABLED)
         VP_StimulusState.write(STIM_ON);
@@ -174,10 +115,7 @@ void ST_STIMULATING() {
 void ST_ERROR() {
     if (currentState != lastState) {
         lastState = currentState;
-
-        //        stopStimulation();
         redLED();
-
         clearAllActions();
 
 #if defined(DEBUG) && defined(DETAIL)
@@ -185,18 +123,15 @@ void ST_ERROR() {
 #endif
     }
 
-    // PERFORM STATE TASKS
-    //    monitorSlave();
-    //
-    //#if defined(LCM_ENABLED)
-    //    VP_ErrorControl.write(STIM_ERROR);
-    //    VP_BatteryLevel.write(STIM_MEASURED_BATTERY);
-    //#endif
+#if defined(LCM_ENABLED)
+    VP_ErrorControl.write(STIM_ERROR);
+    VP_BatteryLevel.write(STIM_MEASURED_BATTERY);
+#endif
 
     // CHECK FOR STATE TRANSITIONS
-    //    if (STIM_ERROR == 0) {
-    //        currentState = READY;
-    //    }
+    if (STIM_ERROR == 0) {
+        nextState = READY;
+    }
 
     // CHECK FOR STATE TRANSITIONS
     if (nextState != currentState) {
@@ -228,14 +163,14 @@ void ST_CONFIG_WAVE_POLE() {
 
 #if defined(LCM_ENABLED)
         if (!STIM_LANG_ENGLISH) {
-            Lcm.changePicId(PID_BR_CONFIG_WAVE_POLE);
+            currentScreen = PID_BR_CONFIG_WAVE_POLE;
         } else {
-            Lcm.changePicId(PID_EN_CONFIG_WAVE_POLE);
+            currentScreen = PID_EN_CONFIG_WAVE_POLE;
         }
+        Lcm.changePicId(currentScreen);
 #endif
     }
 
-    // CHECK FOR STATE TRANSITIONS
     if (nextState != currentState) {
         currentState = nextState;
     }
@@ -261,14 +196,14 @@ void ST_CONFIG_WAVE_PHASE() {
 
 #if defined(LCM_ENABLED)
         if (!STIM_LANG_ENGLISH) {
-            Lcm.changePicId(PID_BR_CONFIG_WAVE_PHASE);
+            currentScreen = PID_BR_CONFIG_WAVE_PHASE;
         } else {
-            Lcm.changePicId(PID_EN_CONFIG_WAVE_PHASE);
+            currentScreen = PID_EN_CONFIG_WAVE_PHASE;
         }
+        Lcm.changePicId(currentScreen);
 #endif
     }
 
-    // CHECK FOR STATE TRANSITIONS
     if (nextState != currentState) {
         currentState = nextState;
     }
@@ -290,10 +225,11 @@ void ST_CONFIG_WAVE_TRAIN() {
 
 #if defined(LCM_ENABLED)
         if (!STIM_LANG_ENGLISH) {
-            Lcm.changePicId(PID_BR_CONFIG_WAVE_TRAIN);
+            currentScreen = PID_BR_CONFIG_WAVE_TRAIN;
         } else {
-            Lcm.changePicId(PID_EN_CONFIG_WAVE_TRAIN);
+            currentScreen = PID_EN_CONFIG_WAVE_TRAIN;
         }
+        Lcm.changePicId(currentScreen);
 #endif
 
         btnBlue->setActionDown(setNextState, CONFIG_CURRENT);
@@ -328,10 +264,11 @@ void ST_CONFIG_WAVE_TRAIN_DETAILS_PULSES() {
 
 #if defined(LCM_ENABLED)
         if (!STIM_LANG_ENGLISH) {
-            Lcm.changePicId(PID_BR_CONFIG_WAVE_TRAIN_DETAILS_PULSE);
+            currentScreen = PID_BR_CONFIG_WAVE_TRAIN_DETAILS_PULSE;
         } else {
-            Lcm.changePicId(PID_EN_CONFIG_WAVE_TRAIN_DETAILS_PULSE);
+            currentScreen = PID_EN_CONFIG_WAVE_TRAIN_DETAILS_PULSE;
         }
+        Lcm.changePicId(currentScreen);
 #endif
 
         btnBlue->setActionDown(setNextState, CONFIG_CURRENT);
@@ -340,7 +277,6 @@ void ST_CONFIG_WAVE_TRAIN_DETAILS_PULSES() {
         rtrEncoder->setActionCCW(decreasePulses);
     }
 
-    // CHECK FOR STATE TRANSITIONS
     if (nextState != currentState) {
         currentState = nextState;
     }
@@ -360,10 +296,11 @@ void ST_CONFIG_WAVE_TRAIN_DETAILS_INTERVAL() {
 
 #if defined(LCM_ENABLED)
         if (!STIM_LANG_ENGLISH) {
-            Lcm.changePicId(PID_BR_CONFIG_WAVE_TRAIN_DETAILS_INTERVAL);
+            currentScreen = PID_BR_CONFIG_WAVE_TRAIN_DETAILS_INTERVAL;
         } else {
-            Lcm.changePicId(PID_EN_CONFIG_WAVE_TRAIN_DETAILS_INTERVAL);
+            currentScreen = PID_EN_CONFIG_WAVE_TRAIN_DETAILS_INTERVAL;
         }
+        Lcm.changePicId(currentScreen);
 #endif
 
         btnBlue->setActionDown(setNextState, CONFIG_CURRENT);
@@ -372,7 +309,6 @@ void ST_CONFIG_WAVE_TRAIN_DETAILS_INTERVAL() {
         rtrEncoder->setActionCCW(decreaseInterval);
     }
 
-    // CHECK FOR STATE TRANSITIONS
     if (nextState != currentState) {
         currentState = nextState;
     }
@@ -389,17 +325,17 @@ void ST_CONFIG_WAVE_TRAIN_DETAILS_EXIT() {
 
 #if defined(LCM_ENABLED)
         if (!STIM_LANG_ENGLISH) {
-            Lcm.changePicId(PID_BR_CONFIG_WAVE_TRAIN_DETAILS_EXIT);
+            currentScreen = PID_BR_CONFIG_WAVE_TRAIN_DETAILS_EXIT;
         } else {
-            Lcm.changePicId(PID_EN_CONFIG_WAVE_TRAIN_DETAILS_EXIT);
+            currentScreen = PID_EN_CONFIG_WAVE_TRAIN_DETAILS_EXIT;
         }
+        Lcm.changePicId(currentScreen);
 #endif
 
         btnBlue->setActionDown(setNextState, CONFIG_CURRENT);
         btnEncoder->setActionDown(setNextState, CONFIG_WAVE_EXIT);
     }
 
-    // CHECK FOR STATE TRANSITIONS
     if (nextState != currentState) {
         currentState = nextState;
     }
@@ -416,17 +352,17 @@ void ST_CONFIG_WAVE_TRAIN_EXIT() {
 
 #if defined(LCM_ENABLED)
         if (!STIM_LANG_ENGLISH) {
-            Lcm.changePicId(PID_BR_CONFIG_WAVE_TRAIN_EXIT);
+            currentScreen = PID_BR_CONFIG_WAVE_TRAIN_EXIT;
         } else {
-            Lcm.changePicId(PID_EN_CONFIG_WAVE_TRAIN_EXIT);
+            currentScreen = PID_EN_CONFIG_WAVE_TRAIN_EXIT;
         }
+        Lcm.changePicId(currentScreen);
 #endif
 
         btnBlue->setActionDown(setNextState, CONFIG_CURRENT);
         btnEncoder->setActionDown(setNextState, READY);
     }
 
-    // CHECK FOR STATE TRANSITIONS
     if (nextState != currentState) {
         currentState = nextState;
     }
@@ -448,14 +384,14 @@ void ST_CONFIG_CURRENT() {
 
 #if defined(LCM_ENABLED)
         if (!STIM_LANG_ENGLISH) {
-            Lcm.changePicId(PID_BR_CONFIG_CURRENT);
+            currentScreen = PID_BR_CONFIG_CURRENT;
         } else {
-            Lcm.changePicId(PID_EN_CONFIG_CURRENT);
+            currentScreen = PID_EN_CONFIG_CURRENT;
         }
+        Lcm.changePicId(currentScreen);
 #endif
     }
 
-    // CHECK FOR STATE TRANSITIONS
     if (nextState != currentState) {
         currentState = nextState;
     }
@@ -472,19 +408,19 @@ void ST_CONFIG_PERIOD() {
         rtrEncoder->setActionCCW(decreasePeriodAtConfig);
 
 #if defined(DEBUG)
-        Serial.println("[INFO] Configuring Period. Current Value: " + String(STIM_PULSE_WIDTH));
+        Serial.println("[INFO] Configuring Period. Current Value: " + String(STIM_PERIOD));
 #endif
 
 #if defined(LCM_ENABLED)
         if (!STIM_LANG_ENGLISH) {
-            Lcm.changePicId(PID_BR_CONFIG_PERIOD);
+            currentScreen = PID_BR_CONFIG_PERIOD;
         } else {
-            Lcm.changePicId(PID_EN_CONFIG_PERIOD);
+            currentScreen = PID_EN_CONFIG_PERIOD;
         }
+        Lcm.changePicId(currentScreen);
 #endif
     }
 
-    // CHECK FOR STATE TRANSITIONS
     if (nextState != currentState) {
         currentState = nextState;
     }
@@ -505,14 +441,14 @@ void ST_CONFIG_FREQUENCY() {
 
 #if defined(LCM_ENABLED)
         if (!STIM_LANG_ENGLISH) {
-            Lcm.changePicId(PID_BR_CONFIG_FREQUENCY);
+            currentScreen = PID_BR_CONFIG_FREQUENCY;
         } else {
-            Lcm.changePicId(PID_EN_CONFIG_FREQUENCY);
+            currentScreen = PID_EN_CONFIG_FREQUENCY;
         }
+        Lcm.changePicId(currentScreen);
 #endif
     }
 
-    // CHECK FOR STATE TRANSITIONS
     if (nextState != currentState) {
         currentState = nextState;
     }
@@ -533,14 +469,14 @@ void ST_CONFIG_GENERAL_USER() {
 
 #if defined(LCM_ENABLED)
         if (!STIM_LANG_ENGLISH) {
-            Lcm.changePicId(PID_BR_CONFIG_GENERAL_USER);
+            currentScreen = PID_BR_CONFIG_GENERAL_USER;
         } else {
-            Lcm.changePicId(PID_EN_CONFIG_GENERAL_USER);
+            currentScreen = PID_EN_CONFIG_GENERAL_USER;
         }
+        Lcm.changePicId(currentScreen);
 #endif
     }
 
-    // CHECK FOR STATE TRANSITIONS
     if (nextState != currentState) {
         currentState = nextState;
     }
@@ -561,14 +497,14 @@ void ST_CONFIG_GENERAL_MODE() {
 
 #if defined(LCM_ENABLED)
         if (!STIM_LANG_ENGLISH) {
-            Lcm.changePicId(PID_BR_CONFIG_GENERAL_MODE);
+            currentScreen = PID_BR_CONFIG_GENERAL_MODE;
         } else {
-            Lcm.changePicId(PID_EN_CONFIG_GENERAL_MODE);
+            currentScreen = PID_EN_CONFIG_GENERAL_MODE;
         }
+        Lcm.changePicId(currentScreen);
 #endif
     }
 
-    // CHECK FOR STATE TRANSITIONS
     if (nextState != currentState) {
         currentState = nextState;
     }
@@ -594,14 +530,14 @@ void ST_CONFIG_GENERAL_USER_LANG() {
 
 #if defined(LCM_ENABLED)
         if (!STIM_LANG_ENGLISH) {
-            Lcm.changePicId(PID_BR_CONFIG_GENERAL_USER_LANG);
+            currentScreen = PID_BR_CONFIG_GENERAL_USER_LANG;
         } else {
-            Lcm.changePicId(PID_EN_CONFIG_GENERAL_USER_LANG);
+            currentScreen = PID_EN_CONFIG_GENERAL_USER_LANG;
         }
+        Lcm.changePicId(currentScreen);
 #endif
     }
 
-    // CHECK FOR STATE TRANSITIONS
     if (nextState != currentState) {
         currentState = nextState;
     }
@@ -623,14 +559,14 @@ void ST_CONFIG_GENERAL_USER_SOUND() {
 
 #if defined(LCM_ENABLED)
         if (!STIM_LANG_ENGLISH) {
-            Lcm.changePicId(PID_BR_CONFIG_GENERAL_USER_SOUND);
+            currentScreen = PID_BR_CONFIG_GENERAL_USER_SOUND;
         } else {
-            Lcm.changePicId(PID_EN_CONFIG_GENERAL_USER_SOUND);
+            currentScreen = PID_EN_CONFIG_GENERAL_USER_SOUND;
         }
+        Lcm.changePicId(currentScreen);
 #endif
     }
 
-    // CHECK FOR STATE TRANSITIONS
     if (nextState != currentState) {
         currentState = nextState;
     }
@@ -651,14 +587,14 @@ void ST_CONFIG_GENERAL_USER_BACKLIGHT() {
 
 #if defined(LCM_ENABLED)
         if (!STIM_LANG_ENGLISH) {
-            Lcm.changePicId(PID_BR_CONFIG_GENERAL_USER_BACKLIGHT);
+            currentScreen = PID_BR_CONFIG_GENERAL_USER_BACKLIGHT;
         } else {
-            Lcm.changePicId(PID_EN_CONFIG_GENERAL_USER_BACKLIGHT);
+            currentScreen = PID_EN_CONFIG_GENERAL_USER_BACKLIGHT;
         }
+        Lcm.changePicId(currentScreen);
 #endif
     }
 
-    // CHECK FOR STATE TRANSITIONS
     if (nextState != currentState) {
         currentState = nextState;
     }
@@ -675,17 +611,17 @@ void ST_CONFIG_GENERAL_USER_EXIT() {
 
 #if defined(LCM_ENABLED)
         if (!STIM_LANG_ENGLISH) {
-            Lcm.changePicId(PID_BR_CONFIG_GENERAL_USER_EXIT);
+            currentScreen = PID_BR_CONFIG_GENERAL_USER_EXIT;
         } else {
-            Lcm.changePicId(PID_EN_CONFIG_GENERAL_USER_EXIT);
+            currentScreen = PID_EN_CONFIG_GENERAL_USER_EXIT;
         }
+        Lcm.changePicId(currentScreen);
 #endif
 
         btnBlue->setActionDown(setNextState, READY);
         btnEncoder->setActionDown(setNextState, CONFIG_GENERAL_MODE);
     }
 
-    // CHECK FOR STATE TRANSITIONS
     if (nextState != currentState) {
         currentState = nextState;
     }
@@ -695,7 +631,7 @@ void ST_CONFIG_GENERAL_MODE_CORTICAL() {
     if (currentState != lastState) {
         lastState = currentState;
         clearAllActions();
-        btnBlue->setActionDown(setNextState, CONFIG_CURRENT);
+        btnBlue->setActionDown(setNextState, READY);
         btnEncoder->setActionDown(setCorticalMode);
         rtrEncoder->setActionCW(setNextState, CONFIG_GENERAL_MODE_LOCALIZATION);
         rtrEncoder->setActionCCW(setNextState, CONFIG_GENERAL_MODE_LOCALIZATION);
@@ -706,14 +642,14 @@ void ST_CONFIG_GENERAL_MODE_CORTICAL() {
 
 #if defined(LCM_ENABLED)
         if (!STIM_LANG_ENGLISH) {
-            Lcm.changePicId(PID_BR_CONFIG_GENERAL_MODE_CORTICAL);
+            currentScreen = PID_BR_CONFIG_GENERAL_MODE_CORTICAL;
         } else {
-            Lcm.changePicId(PID_EN_CONFIG_GENERAL_MODE_CORTICAL);
+            currentScreen = PID_EN_CONFIG_GENERAL_MODE_CORTICAL;
         }
+        Lcm.changePicId(currentScreen);
 #endif
     }
 
-    // CHECK FOR STATE TRANSITIONS
     if (nextState != currentState) {
         currentState = nextState;
     }
@@ -723,7 +659,7 @@ void ST_CONFIG_GENERAL_MODE_LOCALIZATION() {
     if (currentState != lastState) {
         lastState = currentState;
         clearAllActions();
-        btnBlue->setActionDown(setNextState, CONFIG_CURRENT);
+        btnBlue->setActionDown(setNextState, READY);
         btnEncoder->setActionDown(setLocalizationMode);
         rtrEncoder->setActionCW(setNextState, CONFIG_GENERAL_MODE_CORTICAL);
         rtrEncoder->setActionCCW(setNextState, CONFIG_GENERAL_MODE_CORTICAL);
@@ -734,14 +670,14 @@ void ST_CONFIG_GENERAL_MODE_LOCALIZATION() {
 
 #if defined(LCM_ENABLED)
         if (!STIM_LANG_ENGLISH) {
-            Lcm.changePicId(PID_BR_CONFIG_GENERAL_MODE_LOCALIZATION);
+            currentScreen = PID_BR_CONFIG_GENERAL_MODE_LOCALIZATION;
         } else {
-            Lcm.changePicId(PID_EN_CONFIG_GENERAL_MODE_LOCALIZATION);
+            currentScreen = PID_EN_CONFIG_GENERAL_MODE_LOCALIZATION;
         }
+        Lcm.changePicId(currentScreen);
 #endif
     }
 
-    // CHECK FOR STATE TRANSITIONS
     if (nextState != currentState) {
         currentState = nextState;
     }
@@ -758,10 +694,11 @@ void ST_CONFIG_GENERAL_MODE_EXIT() {
 
 #if defined(LCM_ENABLED)
         if (!STIM_LANG_ENGLISH) {
-            Lcm.changePicId(PID_BR_CONFIG_GENERAL_MODE_EXIT);
+            currentScreen = PID_BR_CONFIG_GENERAL_MODE_EXIT;
         } else {
-            Lcm.changePicId(PID_EN_CONFIG_GENERAL_MODE_EXIT);
+            currentScreen = PID_EN_CONFIG_GENERAL_MODE_EXIT;
         }
+        Lcm.changePicId(currentScreen);
 #endif
 
         btnBlue->setActionDown(setNextState, READY);
@@ -785,17 +722,17 @@ void ST_CONFIG_GENERAL_EXIT() {
 
 #if defined(LCM_ENABLED)
         if (!STIM_LANG_ENGLISH) {
-            Lcm.changePicId(PID_BR_CONFIG_GENERAL_EXIT);
+            currentScreen = PID_BR_CONFIG_GENERAL_EXIT;
         } else {
-            Lcm.changePicId(PID_EN_CONFIG_GENERAL_EXIT);
+            currentScreen = PID_EN_CONFIG_GENERAL_EXIT;
         }
+        Lcm.changePicId(currentScreen);
 #endif
 
         btnBlue->setActionDown(setNextState, READY);
         btnEncoder->setActionDown(setNextState, READY);
     }
 
-    // CHECK FOR STATE TRANSITIONS
     if (nextState != currentState) {
         currentState = nextState;
     }
@@ -805,10 +742,6 @@ void stateLoop() {
     switch (currentState) {
         case LOADING_FROM_EPROM:
             ST_LOADING_FROM_EPROM();
-            break;
-
-        case SET_SLAVE_STATE:
-            ST_SET_SLAVE_STATE();
             break;
 
         case MOUNT_SCREEN:

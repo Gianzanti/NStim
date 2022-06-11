@@ -23,7 +23,9 @@ void setup() {
     //  blueLED();
 
 #if defined(I2C_ENABLED)
-    Wire.begin();  // join i2c bus with address I2C_SLAVE_ADDRESS
+    Wire.begin(I2C_IHM_ADDRESS);        // join i2c bus with address I2C_IHM_ADDRESS
+    Wire.onReceive(I2C_receivedData);   // interrupt handler for incoming messages
+    Wire.onRequest(I2C_requestedData);  // register event
 #endif
 
 #if defined(LCM_ENABLED)
@@ -32,7 +34,8 @@ void setup() {
     Lcm.begin();
     delay(3000);
     int version = Lcm.readFirmwareVersion();
-    Lcm.changePicId(PID_INTRO);
+    currentScreen = PID_INTRO;
+    Lcm.changePicId(currentScreen);
 
 #if defined(DEBUG) && defined(DETAIL)
     Serial.println("[INFO] LCM Firmware version:" + String(version));

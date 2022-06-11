@@ -17,12 +17,12 @@ void readConfigFromEEPROM() {
         EEPROM.write(FREQUENCY_ADDRESS, STIM_FREQUENCY);
     }
 
-    // READ PULSE WIDTH
-    valueRead = EEPROM.read(PULSE_WIDTH_ADDRESS);
+    // READ PERIOD
+    valueRead = EEPROM.read(PERIOD_ADDRESS);
     if (valueRead > 0 && valueRead < 100) {
         STIM_PERIOD = valueRead;
 #if defined(DEBUG) && defined(DETAIL)
-        Serial.print("PULSE WIDTH: [ADD:" + String(PULSE_WIDTH_ADDRESS) + "]:");
+        Serial.print("PERIOD: [ADD:" + String(PERIOD_ADDRESS) + "]:");
         Serial.print("\t");
         Serial.print(String(valueRead, DEC) + " ms");
         Serial.println("");
@@ -31,7 +31,7 @@ void readConfigFromEEPROM() {
     } else {
         // setting default value
         STIM_PERIOD = 50;
-        EEPROM.write(PULSE_WIDTH_ADDRESS, STIM_PERIOD);
+        EEPROM.write(PERIOD_ADDRESS, STIM_PERIOD);
     }
 
     // READ CURRENT
@@ -166,7 +166,7 @@ void readConfigFromEEPROM() {
 
     // READ SOUND LEVEL
     valueRead = EEPROM.read(SOUNDLEVEL_ADDRESS);
-    if (valueRead > 0 && valueRead < 100) {
+    if (valueRead >= STIM_SOUNDLEVEL_MIN && valueRead <= STIM_SOUNDLEVEL_MAX) {
         STIM_SOUNDLEVEL = valueRead;
 #if defined(DEBUG) && defined(DETAIL)
         Serial.print("SOUND LEVEL: [ADD:" + String(SOUNDLEVEL_ADDRESS) + "]:");
@@ -177,13 +177,13 @@ void readConfigFromEEPROM() {
 
     } else {
         // setting default value
-        STIM_SOUNDLEVEL = 3;
+        STIM_SOUNDLEVEL = STIM_SOUNDLEVEL_MAX/2;
         EEPROM.write(SOUNDLEVEL_ADDRESS, STIM_SOUNDLEVEL);
     }
 
     // READ BACKLIGHT
     valueRead = EEPROM.read(BACKLIGHT_ADDRESS);
-    if (valueRead > 0 && valueRead < 100) {
+    if (valueRead >= STIM_BACKLIGHT_MIN && valueRead <= STIM_BACKLIGHT_MAX) {
         STIM_BACKLIGHT = valueRead;
 #if defined(DEBUG) && defined(DETAIL)
         Serial.print("BACKLIGHT: [ADD:" + String(BACKLIGHT_ADDRESS) + "]:");
@@ -193,10 +193,10 @@ void readConfigFromEEPROM() {
 #endif
     } else {
         // setting default value
-        STIM_BACKLIGHT = 3;
+        STIM_BACKLIGHT = STIM_BACKLIGHT_MAX/2;
         EEPROM.write(BACKLIGHT_ADDRESS, STIM_BACKLIGHT);
     }
 
     // allow change in the current state
-    nextState = SET_SLAVE_STATE;
+    nextState = MOUNT_SCREEN;
 }
