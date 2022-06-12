@@ -21,7 +21,6 @@ class Button {
         dbDelay = debounceDelay;
         pinMode(pin, INPUT);
     }
-    // ~Button();
 
     void loop() {
         int reading = digitalRead(pin);

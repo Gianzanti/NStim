@@ -1,10 +1,8 @@
 void screenMonitor() {
+#if defined(LCM_ENABLED)  
     int picId = Lcm.readPicId();
     if (picId != 0xFFFF && picId != currentScreen) {
         switch (picId) {
-                // case PID_INTRO:
-                //     break;
-
             case PID_BR_MAIN:
             case PID_EN_MAIN:
                 nextState = READY;
@@ -114,4 +112,5 @@ void screenMonitor() {
                 break;
         }
     }
+#endif    
 }

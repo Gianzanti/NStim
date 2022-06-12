@@ -20,7 +20,6 @@ class Rotary {
         lastDebounceTime = 0;
         dbDelay = 100;
     }
-    // ~Rotary();
 
     void setup() {
         previousState = analogRead(INPUT_ROTARY_CLK) > 512;

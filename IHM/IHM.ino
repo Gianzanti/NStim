@@ -41,49 +41,49 @@
 #define I2C_ANSWER_SIZE 2
 
 // UNICVIEW SCREENS
-#define PID_INTRO 0                                  // Endereço da tela de introdução
-#define PID_BR_MAIN 4                                // Endereço da tela principal - Português
-#define PID_EN_MAIN 4                                // Endereço da tela principal - Inglês
-#define PID_BR_CONFIG_WAVE_POLE 4                    // Endereço da 1ª tela de configuração - Português
-#define PID_EN_CONFIG_WAVE_POLE 4                    // Endereço da 1ª tela de configuração - Inglês
-#define PID_BR_CONFIG_WAVE_PHASE 4                   // Endereço da 1ª tela de configuração - Português
-#define PID_EN_CONFIG_WAVE_PHASE 4                   // Endereço da 1ª tela de configuração - Inglês
-#define PID_BR_CONFIG_WAVE_TRAIN 4                   // Endereço da 1ª tela de configuração - Português
-#define PID_EN_CONFIG_WAVE_TRAIN 4                   // Endereço da 1ª tela de configuração - Inglês
-#define PID_BR_CONFIG_WAVE_TRAIN_DETAILS_PULSE 4     // Endereço da 1ª tela de configuração - Português
-#define PID_EN_CONFIG_WAVE_TRAIN_DETAILS_PULSE 4     // Endereço da 1ª tela de configuração - Inglês
-#define PID_BR_CONFIG_WAVE_TRAIN_DETAILS_INTERVAL 4  // Endereço da 1ª tela de configuração - Português
-#define PID_EN_CONFIG_WAVE_TRAIN_DETAILS_INTERVAL 4  // Endereço da 1ª tela de configuração - Inglês
-#define PID_BR_CONFIG_WAVE_TRAIN_DETAILS_EXIT 4      // Endereço da 1ª tela de configuração - Português
-#define PID_EN_CONFIG_WAVE_TRAIN_DETAILS_EXIT 4      // Endereço da 1ª tela de configuração - Inglês
-#define PID_BR_CONFIG_WAVE_TRAIN_EXIT 4              // Endereço da 1ª tela de configuração - Português
-#define PID_EN_CONFIG_WAVE_TRAIN_EXIT 4              // Endereço da 1ª tela de configuração - Inglês
-#define PID_BR_CONFIG_CURRENT 4                      // Endereço da 1ª tela de configuração - Português
-#define PID_EN_CONFIG_CURRENT 4                      // Endereço da 1ª tela de configuração - Inglês
-#define PID_BR_CONFIG_PERIOD 4                       // Endereço da 1ª tela de configuração - Português
-#define PID_EN_CONFIG_PERIOD 4                       // Endereço da 1ª tela de configuração - Inglês
-#define PID_BR_CONFIG_FREQUENCY 4                    // Endereço da 1ª tela de configuração - Português
-#define PID_EN_CONFIG_FREQUENCY 4                    // Endereço da 1ª tela de configuração - Inglês
-#define PID_BR_CONFIG_GENERAL_USER 0x0B
-#define PID_EN_CONFIG_GENERAL_USER 0x0B
-#define PID_BR_CONFIG_GENERAL_USER_LANG 0x0C
-#define PID_EN_CONFIG_GENERAL_USER_LANG 0x0C
-#define PID_BR_CONFIG_GENERAL_USER_SOUND 0x0D
-#define PID_EN_CONFIG_GENERAL_USER_SOUND 0x0D
-#define PID_BR_CONFIG_GENERAL_USER_BACKLIGHT 0x0E
-#define PID_EN_CONFIG_GENERAL_USER_BACKLIGHT 0x0E
-#define PID_BR_CONFIG_GENERAL_USER_EXIT 0x0F
-#define PID_EN_CONFIG_GENERAL_USER_EXIT 0x0F
-#define PID_BR_CONFIG_GENERAL_MODE 0x10
-#define PID_EN_CONFIG_GENERAL_MODE 0x10
-#define PID_BR_CONFIG_GENERAL_MODE_CORTICAL 0x11
-#define PID_EN_CONFIG_GENERAL_MODE_CORTICAL 0x11
-#define PID_BR_CONFIG_GENERAL_MODE_LOCALIZATION 0x12
-#define PID_EN_CONFIG_GENERAL_MODE_LOCALIZATION 0x12
-#define PID_BR_CONFIG_GENERAL_MODE_EXIT 0x13
-#define PID_EN_CONFIG_GENERAL_MODE_EXIT 0x13
-#define PID_BR_CONFIG_GENERAL_EXIT 0x14
-#define PID_EN_CONFIG_GENERAL_EXIT 0x14
+#define PID_INTRO 0
+#define PID_BR_MAIN 10
+#define PID_EN_MAIN 40
+#define PID_BR_CONFIG_WAVE_POLE 25
+#define PID_EN_CONFIG_WAVE_POLE 55
+#define PID_BR_CONFIG_WAVE_PHASE 26
+#define PID_EN_CONFIG_WAVE_PHASE 56
+#define PID_BR_CONFIG_WAVE_TRAIN 27
+#define PID_EN_CONFIG_WAVE_TRAIN 57
+#define PID_BR_CONFIG_WAVE_TRAIN_DETAILS_PULSE 29
+#define PID_EN_CONFIG_WAVE_TRAIN_DETAILS_PULSE 59
+#define PID_BR_CONFIG_WAVE_TRAIN_DETAILS_INTERVAL 30
+#define PID_EN_CONFIG_WAVE_TRAIN_DETAILS_INTERVAL 60
+#define PID_BR_CONFIG_WAVE_TRAIN_DETAILS_EXIT 31
+#define PID_EN_CONFIG_WAVE_TRAIN_DETAILS_EXIT 61
+#define PID_BR_CONFIG_WAVE_TRAIN_EXIT 28
+#define PID_EN_CONFIG_WAVE_TRAIN_EXIT 58
+#define PID_BR_CONFIG_CURRENT 35
+#define PID_EN_CONFIG_CURRENT 65
+#define PID_BR_CONFIG_PERIOD 34
+#define PID_EN_CONFIG_PERIOD 64
+#define PID_BR_CONFIG_FREQUENCY 33
+#define PID_EN_CONFIG_FREQUENCY 63
+#define PID_BR_CONFIG_GENERAL_USER 12
+#define PID_EN_CONFIG_GENERAL_USER 42
+#define PID_BR_CONFIG_GENERAL_USER_LANG 16
+#define PID_EN_CONFIG_GENERAL_USER_LANG 46
+#define PID_BR_CONFIG_GENERAL_USER_SOUND 17
+#define PID_EN_CONFIG_GENERAL_USER_SOUND 47
+#define PID_BR_CONFIG_GENERAL_USER_BACKLIGHT 18
+#define PID_EN_CONFIG_GENERAL_USER_BACKLIGHT 48
+#define PID_BR_CONFIG_GENERAL_USER_EXIT 19
+#define PID_EN_CONFIG_GENERAL_USER_EXIT 49
+#define PID_BR_CONFIG_GENERAL_MODE 13
+#define PID_EN_CONFIG_GENERAL_MODE 43
+#define PID_BR_CONFIG_GENERAL_MODE_CORTICAL 21
+#define PID_EN_CONFIG_GENERAL_MODE_CORTICAL 51
+#define PID_BR_CONFIG_GENERAL_MODE_LOCALIZATION 22
+#define PID_EN_CONFIG_GENERAL_MODE_LOCALIZATION 52
+#define PID_BR_CONFIG_GENERAL_MODE_EXIT 23
+#define PID_EN_CONFIG_GENERAL_MODE_EXIT 53
+#define PID_BR_CONFIG_GENERAL_EXIT 14
+#define PID_EN_CONFIG_GENERAL_EXIT 44
 
 // LIMITS
 #define STIM_CURRENT_MIN 1

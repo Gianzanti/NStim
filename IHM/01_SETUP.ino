@@ -2,31 +2,21 @@ void setup() {
     pinMode(LED_R, OUTPUT);
     pinMode(LED_G, OUTPUT);
     pinMode(LED_B, OUTPUT);
-    //  pinMode(LED_8, OUTPUT);
-    //  pinMode(LED_7, OUTPUT);
-    //  pinMode(LED_6, OUTPUT);
-    //  pinMode(LED_5, OUTPUT);
-    //  pinMode(LED_4, OUTPUT);
-    //  pinMode(LED_3, OUTPUT);
+
     pinMode(INPUT_ROTARY_CLK, INPUT);
     pinMode(INPUT_ROTARY_DAT, INPUT);
 
-    //  analogWrite(LED_R, 255);
-    //  analogWrite(LED_G, 0);
-    //  analogWrite(LED_B, 255);
-    //  digitalWrite(LED_8, HIGH);
-    //  digitalWrite(LED_7, HIGH);
-    //  digitalWrite(LED_6, HIGH);
-    //  digitalWrite(LED_5, HIGH);
-    //  digitalWrite(LED_4, HIGH);
-    //  digitalWrite(LED_3, HIGH);
-    //  blueLED();
+    analogWrite(LED_R, 0);
+    analogWrite(LED_G, 0);
+    analogWrite(LED_B, 0);
+
 
 #if defined(I2C_ENABLED)
     Wire.begin(I2C_IHM_ADDRESS);        // join i2c bus with address I2C_IHM_ADDRESS
     Wire.onReceive(I2C_receivedData);   // interrupt handler for incoming messages
     Wire.onRequest(I2C_requestedData);  // register event
 #endif
+
 
 #if defined(LCM_ENABLED)
     softSerial.begin(BAUD_RATE);
