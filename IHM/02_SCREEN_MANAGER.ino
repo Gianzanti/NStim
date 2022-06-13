@@ -1,5 +1,5 @@
 void screenMonitor() {
-#if defined(LCM_ENABLED)  
+#if defined(LCM_ENABLED)
     int picId = Lcm.readPicId();
     if (picId != 0xFFFF && picId != currentScreen) {
         switch (picId) {
@@ -48,9 +48,9 @@ void screenMonitor() {
                 nextState = CONFIG_CURRENT;
                 break;
 
-            case PID_BR_CONFIG_PERIOD:
-            case PID_EN_CONFIG_PERIOD:
-                nextState = CONFIG_PERIOD;
+            case PID_BR_CONFIG_PULSE_WIDTH:
+            case PID_EN_CONFIG_PULSE_WIDTH:
+                nextState = CONFIG_PULSE_WIDTH;
                 break;
 
             case PID_BR_CONFIG_FREQUENCY:
@@ -112,5 +112,5 @@ void screenMonitor() {
                 break;
         }
     }
-#endif    
+#endif
 }

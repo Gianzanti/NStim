@@ -9,7 +9,7 @@
 #define DAC_PIN A0
 #define FEEDBACK_CURRENT_PIN A7
 #define SN_PIN A1  // Define o pino A1 como pino SN_PIN ("Stimulus Negative")
-#define SP A2      // Define o pino A2 como pino SP ("Stimulus Positive")
+#define SP_PIN A2  // Define o pino A2 como pino SP_PIN ("Stimulus Positive")
 
 // ----- Constantes  --------
 #define T1_init 0
@@ -29,51 +29,74 @@ unsigned int TtrainMax;
 unsigned int Ttrain;   // Tempo de duração entre os trens de pulsos
 unsigned int TNtrain;  // Tempo de duração dos trens de pulsos
 unsigned int Frequency = 10;
-byte pulse_width = 255;
+float pulse_width = 5.0;
+float current = 10.0;
 
 unsigned int Ttune;
 unsigned int TCOMPTP;
 unsigned int TCOMPTPW;
 
-bool STIMON = false;         // flag que monitora/controla a estimulação ON
-bool STIMFSTPULSE = false;   // flag que monitora/controla se ocorreu o primeiro pulso
-bool STIMSTATE = false;      // flag que monitora/controla o estado de saida
-bool STIMSTATEPW = false;    // flag que monitora/controla o estado de mudança de fase
-bool STIMINPHASE = true;     // flag que monitora/controla a fase inicial do primeiro pulso
-bool STIMMONO = true;        // flag que monitora/controla se o sinal é monopolar ou bipolar
-bool STIMTRAIN = false;      // flag que monitora/controla se ocorrerá trens de pulsos
-bool STIMTUNE = false;       // flag que monitora/controla se ocorrerá compensação na fase catodica
-bool STIMSTATETUNE = false;  // flag que monitora/controla o estado de mudança de fase
-
-bool ATTPW = false;      // Atingiu o tempo TPW(Tempo de Pulse Width)
-bool ATTP = false;       // Atingiu o tempo TP(Tempo de pulso)
-bool ATTPWC = false;     // Atingiu o tempo TPWC(Tempo de Pulse Width Compensado)
-bool ATTPC = false;      // Atingiu o tempo TPC(Tempo de pulso Compensado)
-bool ATTRAIN = false;    // Atingiu o tempo TP(Tempo de pulso)
-bool STIMCOMP = false;   // flag que monitora/controla se ocorrerá compensação na fase catodica
-bool STIMPHASE = false;  // flag que monitora/controla a fase inicial do primeiro pulso
+bool stimulationIsOn = false;  // flag que monitora/controla a estimulação ON
+bool STIMFSTPULSE = false;     // flag que monitora/controla se ocorreu o primeiro pulso
+bool STIMSTATE = false;        // flag que monitora/controla o estado de saida
+bool STIMSTATEPW = false;      // flag que monitora/controla o estado de mudança de fase
+bool STIMINPHASE = true;       // flag que monitora/controla a fase inicial do primeiro pulso
+bool STIMMONO = true;          // flag que monitora/controla se o sinal é monopolar ou bipolar
+bool STIMTRAIN = false;        // flag que monitora/controla se ocorrerá trens de pulsos
+bool STIMTUNE = false;         // flag que monitora/controla se ocorrerá compensação na fase catodica
+bool STIMSTATETUNE = false;    // flag que monitora/controla o estado de mudança de fase
+bool ATTPW = false;            // Atingiu o tempo TPW(Tempo de Pulse Width)
+bool ATTP = false;             // Atingiu o tempo TP(Tempo de pulso)
+bool ATTPWC = false;           // Atingiu o tempo TPWC(Tempo de Pulse Width Compensado)
+bool ATTPC = false;            // Atingiu o tempo TPC(Tempo de pulso Compensado)
+bool ATTRAIN = false;          // Atingiu o tempo TP(Tempo de pulso)
+bool STIMCOMP = false;         // flag que monitora/controla se ocorrerá compensação na fase catodica
+bool STIMPHASE = false;        // flag que monitora/controla a fase inicial do primeiro pulso
 
 byte I2C_ERROR_STATE = 0;
 byte I2C_BATTERY_LEVEL = 0;
 byte I2C_CURRENT_MEASURED = 0;
+
 byte I2C_STIM_STATE = 0;
 byte I2C_STIM_TRAIN_INTERVAL = 0;
+
+#define CONTROL_BYTE 0b01000000
+#define BAUD_RATE 115200
+#define ZERO_DAC 4095
+
+float currentSetpoint = 15.0;
+
+unsigned int STDAC = 0;
+unsigned int DCSTIM = 0;
+float ACSTIM = 0.0;
+float CTODAC = 0.0;  // current to DAC
 
 // ----- Interrupção ------
 ISR(TIMER1_COMPA_vect) {
     TCNT1 = T1_init;  // reinicializa TIMER1
-    // STIM();
-    UpdateTP();
-    UpdateState();
+    updateTP();
+    updateState();
 }
 
 void setup() {
     // Setup I2C Communication
     Wire.begin();
 
-    Serial.begin(9600);
+    Serial.begin(BAUD_RATE);
     pinMode(SN_PIN, OUTPUT);  // define SN_PIN como saída
-    pinMode(SP, OUTPUT);      // define SP como saída
+    pinMode(SP_PIN, OUTPUT);  // define SP_PIN como saída
+    pinMode(DAC_PIN, OUTPUT);
+    pinMode(FEEDBACK_CURRENT_PIN, INPUT);
+
+    digitalWrite(DAC_PIN, HIGH);
+    writeToDAC(ZERO_DAC);
+
+#if defined(DEBUG)
+    Serial.println("[INFO] Signal Manager Started");
+#endif
+
+    setStimulusCurrent(currentSetpoint);
+
     // Modo de Comparação
     TCCR1A = 0;
 
@@ -89,22 +112,22 @@ void setup() {
     // Habilita Interrupção do Timer1
     TIMSK1 = (1 << OCIE1A);
 
-    setFrequency(Frequency);
-    setPulseWidth(pulse_width);
-    Serial.println(T1_PW);
-    Serial.println(T1_limit);
-    STIMPHASE = true;
-    STIMMONO = true;
-    STIMTRAIN = true;  // Trens de pulsos EN=1
-    nTrainPulses = 4;
-    STTrainMin();
-    STtrain(500);
-    STIMTUNE = false;
-    STIMCOMP = false;
-    SCOMPTPC(1);
-    SCOMPTPWC(1);
-    delay(1000);
-    STIMON = true;
+    // setFrequency(Frequency);
+    // setPulseWidth(pulse_width);
+    // Serial.println(T1_PW);
+    // Serial.println(T1_limit);
+    // STIMPHASE = true;
+    // STIMMONO = true;
+    // STIMTRAIN = true;  // Trens de pulsos EN=1
+    // nTrainPulses = 4;
+    // STTrainMin();
+    // STtrain(500);
+    // STIMTUNE = false;
+    // STIMCOMP = false;
+    // SCOMPTPC(1);
+    // SCOMPTPWC(1);
+    // delay(1000);
+    // stimulationIsOn = true;
 }
 
 byte I2C_CommIndex = 0;
@@ -119,18 +142,19 @@ void loop() {
     Wire.beginTransmission(I2C_IHM_ADDRESS);
     Wire.write(0b11111111);
     Wire.write(I2C_ERROR_STATE);
-    Wire.write(STIMON);
+    Wire.write(stimulationIsOn);
     Wire.write(I2C_BATTERY_LEVEL);
     Wire.write(I2C_CURRENT_MEASURED);
     Wire.endTransmission();
     delay(10);
 
-    if (!STIMON) {
+    if (!stimulationIsOn) {
         Wire.requestFrom(I2C_IHM_ADDRESS, 9);
         comm_index = 0;
 
         while (Wire.available()) {
             byte value = Wire.read();
+            unsigned int intValue = 0;
             if (!I2C_CommStarted && I2C_CommFinished && value == 255) {
                 I2C_CommIndex = 1;
                 I2C_CommStarted = true;
@@ -152,7 +176,9 @@ void loop() {
                     break;
 
                 case 2:
-                    STIMTRAIN = (Wire.read() == 1);
+                    intValue = 0;
+                    intValue |= (Wire.read() & 0xFF);
+                    currentSetpoint = intValue / 10.0;
                     comm_index++;
                     break;
 
@@ -168,7 +194,9 @@ void loop() {
                     break;
 
                 case 5:
-                    pulse_width = Wire.read();
+                    intValue = 0;
+                    intValue |= (Wire.read() & 0xFF);
+                    pulse_width = intValue / 10.0;
                     comm_index++;
                     break;
 
@@ -194,7 +222,10 @@ void loop() {
         }
 
         if (I2C_CommFinished) {
-            STIMON = I2C_STIM_STATE & 0b10000000;
+            if (I2C_STIM_STATE & 0b10000000) {
+                setStimulusCurrent(currentSetpoint);
+                turnOnStimulus();
+            };
             I2C_CommIndex = 0;
             I2C_CommStarted = false;
         }
@@ -213,11 +244,37 @@ void loop() {
         // BYTE 8 -> Train Interval LSB(1 a 1000)
     }
 
+    if (stimulationIsOn) {
+        getFeedbackCurrent();
+        float errorCurrent = currentSetpoint - ACSTIM;
+        if (errorCurrent > 0.00) {
+            writeToDAC(STDAC++);
+        } else if (errorCurrent < 0.00) {
+            writeToDAC(STDAC--);
+        }
+        delay(10);
+    }
+
     //  delay(500);
 }
 
-void UpdateTP() {
-    if (STIMON) {
+void turnOnStimulus() {
+    setFrequency(Frequency);
+    setPulseWidth(pulse_width);
+    STTrainMin();
+    STtrain(500);
+    STIMTUNE = false;
+    STIMCOMP = false;
+    // SCOMPTPC(1);
+    // SCOMPTPWC(1);
+    SCOMPTPC();
+    SCOMPTPWC();
+    delay(1000);
+    stimulationIsOn = true;
+}
+
+void updateTP() {
+    if (stimulationIsOn) {
         if (STIMCOMP) {
             // Compensado
 
@@ -286,29 +343,34 @@ void UpdateTP() {
     }
 }
 
-void UpdateState() {
+void updateState() {
     switch (State) {
         case 0:  // S0
-            if (STIMON) {
+            if (stimulationIsOn) {
                 State = 1;
-                digitalWrite(SP, LOW);
-                digitalWrite(SN_PIN, LOW);
-            } else {
-                digitalWrite(SP, LOW);
-                digitalWrite(SN_PIN, LOW);
+                // digitalWrite(SP_PIN, LOW);
+                // digitalWrite(SN_PIN, LOW);
+                // } else {
+                //     // digitalWrite(SP_PIN, LOW);
+                //     // digitalWrite(SN_PIN, LOW);
             }
+            digitalWrite(SP_PIN, LOW);
+            digitalWrite(SN_PIN, LOW);
+
             break;
 
         case 1:              // S1
             if (STIMMONO) {  // Monofásico
                 State = 2;
-                digitalWrite(SP, LOW);
-                digitalWrite(SN_PIN, LOW);
+                // digitalWrite(SP_PIN, LOW);
+                // digitalWrite(SN_PIN, LOW);
             } else {  // Bifásico
                 State = 9;
-                digitalWrite(SP, LOW);
-                digitalWrite(SN_PIN, LOW);
+                // digitalWrite(SP_PIN, LOW);
+                // digitalWrite(SN_PIN, LOW);
             }
+            digitalWrite(SP_PIN, LOW);
+            digitalWrite(SN_PIN, LOW);
             break;
 
         case 2:               // S2
@@ -318,21 +380,23 @@ void UpdateState() {
                 ATTPW = false;
                 ATTP = false;
                 nPulses = 1;
-                digitalWrite(SP, LOW);
-                digitalWrite(SN_PIN, LOW);
+                // digitalWrite(SP_PIN, LOW);
+                // digitalWrite(SN_PIN, LOW);
             } else {  // Sem trem de pulso
                 State = 3;
-                digitalWrite(SP, LOW);
-                digitalWrite(SN_PIN, LOW);
+                // digitalWrite(SP_PIN, LOW);
+                // digitalWrite(SN_PIN, LOW);
             }
+            digitalWrite(SP_PIN, LOW);
+            digitalWrite(SN_PIN, LOW);
             break;
 
         case 3:           // S3
             if (ATTPW) {  // Atingiu o Tempo TPW
                 State = 4;
             } else {  // Não atingiu o Tempo TPW
-                State = 3;
-                digitalWrite(SP, LOW);
+                // State = 3;
+                digitalWrite(SP_PIN, LOW);
                 digitalWrite(SN_PIN, HIGH);
             }
             break;
@@ -344,8 +408,8 @@ void UpdateState() {
                 ATTPW = false;
                 ATTP = false;
             } else {  // Não atingiu o Tempo TP
-                State = 4;
-                digitalWrite(SP, LOW);
+                // State = 4;
+                digitalWrite(SP_PIN, LOW);
                 digitalWrite(SN_PIN, LOW);
             }
             break;
@@ -354,8 +418,8 @@ void UpdateState() {
             if (ATTPW) {  // Atingiu o Tempo TPW
                 State = 6;
             } else {  // Não atingiu o Tempo TPW
-                State = 5;
-                digitalWrite(SP, LOW);
+                // State = 5;
+                digitalWrite(SP_PIN, LOW);
                 digitalWrite(SN_PIN, HIGH);
             }
             break;
@@ -364,8 +428,8 @@ void UpdateState() {
             if (ATTP) {  // Atingiu o Tempo TP
                 State = 7;
             } else {  // Não atingiu o Tempo TP
-                State = 6;
-                digitalWrite(SP, LOW);
+                // State = 6;
+                digitalWrite(SP_PIN, LOW);
                 digitalWrite(SN_PIN, LOW);
             }
             break;
@@ -373,16 +437,17 @@ void UpdateState() {
         case 7:  // S7
             if (nPulses == nTrainPulses) {
                 State = 8;
-                T1_cont = 0;
+                // T1_cont = 0;
                 ATTPW = true;
                 ATTP = true;
             } else {
                 nPulses++;
                 State = 5;
-                T1_cont = 0;
+                // T1_cont = 0;
                 ATTPW = false;
                 ATTP = false;
             }
+            T1_cont = 0;
             break;
 
         case 8:             // S8
@@ -392,11 +457,11 @@ void UpdateState() {
                 ATTPW = false;
                 ATTP = false;
                 ATTRAIN = false;
-                digitalWrite(SP, LOW);
+                digitalWrite(SP_PIN, LOW);
             } else {  // Não atingiu o Tempo TTRAIN
-                State = 8;
+                // State = 8;
                 nPulses = 1;
-                digitalWrite(SP, HIGH);
+                digitalWrite(SP_PIN, HIGH);
                 digitalWrite(SN_PIN, LOW);
             }
             break;
@@ -404,13 +469,16 @@ void UpdateState() {
         case 9:              // S9
             if (STIMCOMP) {  // Compensado
                 State = 25;
-                digitalWrite(SP, LOW);
-                digitalWrite(SN_PIN, LOW);
+                // digitalWrite(SP_PIN, LOW);
+                // digitalWrite(SN_PIN, LOW);
             } else {  // Não compensado
                 State = 10;
-                digitalWrite(SP, LOW);
-                digitalWrite(SN_PIN, LOW);
+                // digitalWrite(SP_PIN, LOW);
+                // digitalWrite(SN_PIN, LOW);
             }
+            digitalWrite(SP_PIN, LOW);
+            digitalWrite(SN_PIN, LOW);
+
             break;
 
         case 10:              // S10
@@ -420,33 +488,39 @@ void UpdateState() {
                 ATTPW = false;
                 ATTP = false;
                 nPulses = 1;
-                digitalWrite(SP, LOW);
-                digitalWrite(SN_PIN, LOW);
+                // digitalWrite(SP_PIN, LOW);
+                // digitalWrite(SN_PIN, LOW);
             } else {  // Sem trem de pulso
                 State = 11;
-                digitalWrite(SP, LOW);
-                digitalWrite(SN_PIN, LOW);
+                // digitalWrite(SP_PIN, LOW);
+                // digitalWrite(SN_PIN, LOW);
             }
+            digitalWrite(SP_PIN, LOW);
+            digitalWrite(SN_PIN, LOW);
+
             break;
 
         case 11:              // S11
             if (STIMPHASE) {  // Bifásico Positivo
                 State = 12;
-                digitalWrite(SP, LOW);
-                digitalWrite(SN_PIN, LOW);
+                // digitalWrite(SP_PIN, LOW);
+                // digitalWrite(SN_PIN, LOW);
             } else {  // Bifásico Negativo
                 State = 14;
-                digitalWrite(SP, LOW);
-                digitalWrite(SN_PIN, LOW);
+                // digitalWrite(SP_PIN, LOW);
+                // digitalWrite(SN_PIN, LOW);
             }
+            digitalWrite(SP_PIN, LOW);
+            digitalWrite(SN_PIN, LOW);
+
             break;
 
         case 12:          // S12
             if (ATTPW) {  // Atingiu o Tempo TPW
                 State = 13;
             } else {  // Não atingiu o Tempo TPW
-                State = 12;
-                digitalWrite(SP, LOW);
+                // State = 12;
+                digitalWrite(SP_PIN, LOW);
                 digitalWrite(SN_PIN, HIGH);
             }
             break;
@@ -458,8 +532,8 @@ void UpdateState() {
                 ATTPW = false;
                 ATTP = false;
             } else {  // Não atingiu o Tempo TP
-                State = 13;
-                digitalWrite(SP, HIGH);
+                // State = 13;
+                digitalWrite(SP_PIN, HIGH);
                 digitalWrite(SN_PIN, LOW);
             }
             break;
@@ -468,8 +542,8 @@ void UpdateState() {
             if (ATTPW) {  // Atingiu o Tempo TPW
                 State = 15;
             } else {  // Não atingiu o Tempo TPW
-                State = 14;
-                digitalWrite(SP, HIGH);
+                // State = 14;
+                digitalWrite(SP_PIN, HIGH);
                 digitalWrite(SN_PIN, LOW);
             }
             break;
@@ -481,8 +555,8 @@ void UpdateState() {
                 ATTPW = false;
                 ATTP = false;
             } else {  // Não atingiu o Tempo TP
-                State = 15;
-                digitalWrite(SP, LOW);
+                // State = 15;
+                digitalWrite(SP_PIN, LOW);
                 digitalWrite(SN_PIN, HIGH);
             }
             break;
@@ -490,21 +564,24 @@ void UpdateState() {
         case 16:              // S16
             if (STIMPHASE) {  // Bifásico Positivo
                 State = 21;
-                digitalWrite(SP, LOW);
-                digitalWrite(SN_PIN, LOW);
+                // digitalWrite(SP_PIN, LOW);
+                // digitalWrite(SN_PIN, LOW);
             } else {  // Bifásico Negativo
                 State = 17;
-                digitalWrite(SP, LOW);
-                digitalWrite(SN_PIN, LOW);
+                // digitalWrite(SP_PIN, LOW);
+                // digitalWrite(SN_PIN, LOW);
             }
+            digitalWrite(SP_PIN, LOW);
+            digitalWrite(SN_PIN, LOW);
+
             break;
 
         case 17:          // S17
             if (ATTPW) {  // Atingiu o Tempo TPW
                 State = 18;
             } else {  // Não atingiu o Tempo TPW
-                State = 17;
-                digitalWrite(SP, HIGH);
+                // State = 17;
+                digitalWrite(SP_PIN, HIGH);
                 digitalWrite(SN_PIN, LOW);
             }
             break;
@@ -513,8 +590,8 @@ void UpdateState() {
             if (ATTP) {  // Atingiu o Tempo TP
                 State = 19;
             } else {  // Não atingiu o Tempo TP
-                State = 18;
-                digitalWrite(SP, LOW);
+                // State = 18;
+                digitalWrite(SP_PIN, LOW);
                 digitalWrite(SN_PIN, HIGH);
             }
             break;
@@ -522,16 +599,17 @@ void UpdateState() {
         case 19:                            // S19
             if (nPulses == nTrainPulses) {  // Atingiu o número de pulsos
                 State = 20;
-                T1_cont = 0;
+                // T1_cont = 0;
                 ATTPW = true;
                 ATTP = true;
             } else {  // Não atingiu o número de pulsos
                 nPulses++;
                 State = 17;
-                T1_cont = 0;
+                // T1_cont = 0;
                 ATTPW = false;
                 ATTP = false;
             }
+            T1_cont = 0;
             break;
 
         case 20:            // S20
@@ -542,9 +620,9 @@ void UpdateState() {
                 ATTP = false;
                 ATTRAIN = false;
             } else {  // Não atingiu o Tempo TTRAIN
-                State = 20;
+                // State = 20;
                 nPulses = 1;
-                digitalWrite(SP, LOW);
+                digitalWrite(SP_PIN, LOW);
                 digitalWrite(SN_PIN, LOW);
             }
             break;
@@ -553,8 +631,8 @@ void UpdateState() {
             if (ATTPW) {  // Atingiu o Tempo TPW
                 State = 22;
             } else {  // Não atingiu o Tempo TPW
-                State = 21;
-                digitalWrite(SP, LOW);
+                // State = 21;
+                digitalWrite(SP_PIN, LOW);
                 digitalWrite(SN_PIN, HIGH);
             }
             break;
@@ -563,8 +641,8 @@ void UpdateState() {
             if (ATTP) {  // Atingiu o Tempo TP
                 State = 23;
             } else {  // Não atingiu o Tempo TP
-                State = 22;
-                digitalWrite(SP, HIGH);
+                // State = 22;
+                digitalWrite(SP_PIN, HIGH);
                 digitalWrite(SN_PIN, LOW);
             }
             break;
@@ -572,16 +650,17 @@ void UpdateState() {
         case 23:                            // S23
             if (nPulses == nTrainPulses) {  // Atingiu o número de pulsos
                 State = 24;
-                T1_cont = 0;
+                // T1_cont = 0;
                 ATTPW = true;
                 ATTP = true;
             } else {  // Não atingiu o número de pulsos
                 nPulses++;
                 State = 21;
-                T1_cont = 0;
+                // T1_cont = 0;
                 ATTPW = false;
                 ATTP = false;
             }
+            T1_cont = 0;
             break;
 
         case 24:            // S24
@@ -592,9 +671,9 @@ void UpdateState() {
                 ATTP = false;
                 ATTRAIN = false;
             } else {  // Não atingiu o Tempo TTRAIN
-                State = 24;
+                // State = 24;
                 nPulses = 1;
-                digitalWrite(SP, LOW);
+                digitalWrite(SP_PIN, LOW);
                 digitalWrite(SN_PIN, LOW);
             }
             break;
@@ -608,33 +687,39 @@ void UpdateState() {
                 ATTPW = false;
                 ATTP = false;
                 nPulses = 1;
-                digitalWrite(SP, LOW);
-                digitalWrite(SN_PIN, LOW);
+                // digitalWrite(SP_PIN, LOW);
+                // digitalWrite(SN_PIN, LOW);
             } else {  // Sem trem de pulso
                 State = 26;
-                digitalWrite(SP, LOW);
-                digitalWrite(SN_PIN, LOW);
+                // digitalWrite(SP_PIN, LOW);
+                // digitalWrite(SN_PIN, LOW);
             }
+            digitalWrite(SP_PIN, LOW);
+            digitalWrite(SN_PIN, LOW);
+
             break;
 
         case 26:              // S26
             if (STIMPHASE) {  // Bifásico Positivo
                 State = 27;
-                digitalWrite(SP, LOW);
-                digitalWrite(SN_PIN, LOW);
+                // digitalWrite(SP_PIN, LOW);
+                // digitalWrite(SN_PIN, LOW);
             } else {  // Bifásico Negativo
                 State = 30;
-                digitalWrite(SP, LOW);
-                digitalWrite(SN_PIN, LOW);
+                // digitalWrite(SP_PIN, LOW);
+                // digitalWrite(SN_PIN, LOW);
             }
+            digitalWrite(SP_PIN, LOW);
+            digitalWrite(SN_PIN, LOW);
+
             break;
 
         case 27:          // S27
             if (ATTPW) {  // Atingiu o Tempo TPW
                 State = 28;
             } else {  // Não atingiu o Tempo TPW
-                State = 27;
-                digitalWrite(SP, LOW);
+                // State = 27;
+                digitalWrite(SP_PIN, LOW);
                 digitalWrite(SN_PIN, HIGH);
             }
             break;
@@ -643,8 +728,8 @@ void UpdateState() {
             if (ATTP) {  // Atingiu o Tempo TP
                 State = 29;
             } else {  // Não atingiu o Tempo TP
-                State = 28;
-                digitalWrite(SP, HIGH);
+                // State = 28;
+                digitalWrite(SP_PIN, HIGH);
                 digitalWrite(SN_PIN, LOW);
             }
             break;
@@ -657,8 +742,8 @@ void UpdateState() {
                 ATTP = false;
                 ATTPC = false;
             } else {  // Não atingiu o Tempo TP+C
-                State = 29;
-                digitalWrite(SP, LOW);
+                // State = 29;
+                digitalWrite(SP_PIN, LOW);
                 digitalWrite(SN_PIN, LOW);
             }
             break;
@@ -667,8 +752,8 @@ void UpdateState() {
             if (ATTPW) {  // Atingiu o Tempo TPW
                 State = 31;
             } else {  // Não atingiu o Tempo TPW
-                State = 30;
-                digitalWrite(SP, HIGH);
+                // State = 30;
+                digitalWrite(SP_PIN, HIGH);
                 digitalWrite(SN_PIN, LOW);
             }
             break;
@@ -677,8 +762,8 @@ void UpdateState() {
             if (ATTPWC) {  // Atingiu o Tempo TPW+C
                 State = 32;
             } else {  // Não atingiu o Tempo TPW+C
-                State = 31;
-                digitalWrite(SP, LOW);
+                // State = 31;
+                digitalWrite(SP_PIN, LOW);
                 digitalWrite(SN_PIN, LOW);
             }
             break;
@@ -691,8 +776,8 @@ void UpdateState() {
                 ATTPW = false;
                 ATTP = false;
             } else {  // Não atingiu o Tempo TP
-                State = 32;
-                digitalWrite(SP, LOW);
+                // State = 32;
+                digitalWrite(SP_PIN, LOW);
                 digitalWrite(SN_PIN, HIGH);
             }
             break;
@@ -700,21 +785,24 @@ void UpdateState() {
         case 33:              // S33
             if (STIMPHASE) {  // Bifásico Positivo
                 State = 39;
-                digitalWrite(SP, LOW);
-                digitalWrite(SN_PIN, LOW);
+                // digitalWrite(SP_PIN, LOW);
+                // digitalWrite(SN_PIN, LOW);
             } else {  // Bifásico Negativo
                 State = 34;
-                digitalWrite(SP, LOW);
-                digitalWrite(SN_PIN, LOW);
+                // digitalWrite(SP_PIN, LOW);
+                // digitalWrite(SN_PIN, LOW);
             }
+            digitalWrite(SP_PIN, LOW);
+            digitalWrite(SN_PIN, LOW);
+
             break;
 
         case 34:          // S34
             if (ATTPW) {  // Atingiu o Tempo TPW
                 State = 35;
             } else {  // Não atingiu o Tempo TPW
-                State = 34;
-                digitalWrite(SP, HIGH);
+                // State = 34;
+                digitalWrite(SP_PIN, HIGH);
                 digitalWrite(SN_PIN, LOW);
             }
             break;
@@ -723,8 +811,8 @@ void UpdateState() {
             if (ATTPWC) {  // Atingiu o Tempo TPW+C
                 State = 36;
             } else {  // Não atingiu o Tempo TPW+C
-                State = 35;
-                digitalWrite(SP, LOW);
+                // State = 35;
+                digitalWrite(SP_PIN, LOW);
                 digitalWrite(SN_PIN, LOW);
             }
             break;
@@ -733,8 +821,8 @@ void UpdateState() {
             if (ATTP) {  // Atingiu o Tempo TP
                 State = 37;
             } else {  // Não atingiu o Tempo TP
-                State = 36;
-                digitalWrite(SP, LOW);
+                // State = 36;
+                digitalWrite(SP_PIN, LOW);
                 digitalWrite(SN_PIN, HIGH);
             }
             break;
@@ -742,18 +830,19 @@ void UpdateState() {
         case 37:                            // S37
             if (nPulses == nTrainPulses) {  // Atingiu o número de pulsos
                 State = 38;
-                T1_cont = 0;
+                // T1_cont = 0;
                 ATTPWC = true;
                 ATTPW = true;
                 ATTP = true;
             } else {  // Não atingiu o número de pulsos
                 nPulses++;
                 State = 34;
-                T1_cont = 0;
+                // T1_cont = 0;
                 ATTPWC = false;
                 ATTPW = false;
                 ATTP = false;
             }
+            T1_cont = 0;
             break;
 
         case 38:            // S38
@@ -765,9 +854,9 @@ void UpdateState() {
                 ATTP = false;
                 ATTRAIN = false;
             } else {  // Não atingiu o Tempo TTRAIN
-                State = 38;
+                // State = 38;
                 nPulses = 1;
-                digitalWrite(SP, LOW);
+                digitalWrite(SP_PIN, LOW);
                 digitalWrite(SN_PIN, LOW);
             }
             break;
@@ -776,8 +865,8 @@ void UpdateState() {
             if (ATTPW) {  // Atingiu o Tempo TPW
                 State = 40;
             } else {  // Não atingiu o Tempo TPW
-                State = 39;
-                digitalWrite(SP, LOW);
+                // State = 39;
+                digitalWrite(SP_PIN, LOW);
                 digitalWrite(SN_PIN, HIGH);
             }
             break;
@@ -786,8 +875,8 @@ void UpdateState() {
             if (ATTP) {  // Atingiu o Tempo TP
                 State = 41;
             } else {  // Não atingiu o Tempo TP
-                State = 40;
-                digitalWrite(SP, HIGH);
+                // State = 40;
+                digitalWrite(SP_PIN, HIGH);
                 digitalWrite(SN_PIN, LOW);
             }
             break;
@@ -796,8 +885,8 @@ void UpdateState() {
             if (ATTPC) {  // Atingiu o Tempo TP+C
                 State = 42;
             } else {  // Não atingiu o Tempo TP+C
-                State = 41;
-                digitalWrite(SP, LOW);
+                // State = 41;
+                digitalWrite(SP_PIN, LOW);
                 digitalWrite(SN_PIN, LOW);
             }
             break;
@@ -805,18 +894,19 @@ void UpdateState() {
         case 42:                            // S42
             if (nPulses == nTrainPulses) {  // Atingiu o número de pulsos
                 State = 43;
-                T1_cont = 0;
+                // T1_cont = 0;
                 ATTPC = true;
                 ATTPW = true;
                 ATTP = true;
             } else {  // Não atingiu o número de pulsos
                 nPulses++;
                 State = 39;
-                T1_cont = 0;
+                // T1_cont = 0;
                 ATTPC = false;
                 ATTPW = false;
                 ATTP = false;
             }
+            T1_cont = 0;
             break;
 
         case 43:            // S43
@@ -828,9 +918,9 @@ void UpdateState() {
                 ATTP = false;
                 ATTRAIN = false;
             } else {  // Não atingiu o Tempo TTRAIN
-                State = 43;
+                // State = 43;
                 nPulses = 1;
-                digitalWrite(SP, LOW);
+                digitalWrite(SP_PIN, LOW);
                 digitalWrite(SN_PIN, LOW);
             }
             break;
@@ -840,90 +930,19 @@ void UpdateState() {
     }
 }
 
-void STIM() {
-    if (STIMON) {
-        if (STIMFSTPULSE) {
-            if ((T1_cont >= T1_PW && T1_cont <= T1_limit && STIMSTATEPW == false && STIMTRAIN == false) || (T1_cont >= T1_PW && T1_cont <= T1_limit && STIMSTATEPW == false && STIMTRAIN == true && nPulses <= nTrainPulses)) {
-                if (STIMMONO) {
-                    digitalWrite(SN_PIN, !STIMSTATE);
-                    STIMSTATE = !STIMSTATE;
-                    STIMSTATEPW = true;
-                } else {
-                    if (STIMTUNE) {
-                        if (!STIMSTATE) {
-                            if ((T1_cont >= Ttune && T1_cont <= T1_limit && STIMSTATETUNE == false && STIMTRAIN == false) || (T1_cont >= Ttune && T1_cont <= T1_limit && STIMSTATETUNE == false && STIMTRAIN == true && nPulses <= nTrainPulses)) {
-                                digitalWrite(SN_PIN, LOW);
-                                digitalWrite(SP, LOW);
-                                STIMSTATETUNE = true;
-                            } else if ((T1_cont >= Ttune && T1_cont <= T1_limit && STIMSTATETUNE == true && STIMTRAIN == false) || (T1_cont >= Ttune && T1_cont <= T1_limit && STIMSTATETUNE == true && STIMTRAIN == true && nPulses <= nTrainPulses)) {
-                                digitalWrite(SN_PIN, !STIMSTATE);
-                                digitalWrite(SP, STIMSTATE);
-                                STIMSTATE = !STIMSTATE;
-                                STIMSTATEPW = true;
-                                STIMSTATETUNE = false;
-                            }
-                        }
-                    } else {
-                        digitalWrite(SN_PIN, !STIMSTATE);
-                        digitalWrite(SP, STIMSTATE);
-                        STIMSTATE = !STIMSTATE;
-                        STIMSTATEPW = true;
-                    }
-                };
-            }
-            if ((T1_cont >= T1_PW && T1_cont >= T1_limit && STIMTRAIN == false) || (T1_cont >= T1_PW && T1_cont >= T1_limit && nPulses <= nTrainPulses && STIMTRAIN == true)) {
-                if (STIMMONO) {
-                    digitalWrite(SN_PIN, !STIMSTATE);
-                } else {
-                    digitalWrite(SN_PIN, !STIMSTATE);
-                    digitalWrite(SP, STIMSTATE);
-                }
-                STIMSTATE = !STIMSTATE;
-                STIMSTATEPW = false;
-                T1_cont = 0;
-                nPulses++;
-                if (nPulses >= nTrainPulses && STIMTRAIN == true) {
-                    digitalWrite(SN_PIN, LOW);
-                    digitalWrite(SP, HIGH);
-                    STIMSTATEPW = false;
-                }
-            } else if (T1_cont >= T1_PW && T1_cont >= T1_limit && nPulses >= nTrainPulses && STIMTRAIN == true && T1_cont >= Ttrain) {
-                digitalWrite(SN_PIN, LOW);
-                digitalWrite(SP, HIGH);
-                STIMSTATE = false;
-                STIMSTATEPW = false;
-                T1_cont = 0;
-                nPulses = 1;
-                ;
-            }
-            T1_cont++;
-        } else {
-            if (STIMINPHASE) {     // A fase inicial do primeiro pulso é positivo?
-                STIMSTATE = true;  // Estado inicial da saída é acionada
-                digitalWrite(SN_PIN, HIGH);
-                STIMFSTPULSE = true;
-            } else {                // Se a fase inicial do primeiro pulso não for positivo
-                STIMSTATE = false;  // Estado inicial da saída é desacionada
-                digitalWrite(SN_PIN, LOW);
-                STIMFSTPULSE = true;
-            }
-        }
-    }
-}
-
 void setFrequency(unsigned int freq) {  // Seleciona a frequência
     T1_limit = 2 * 1250 / freq;
 }
 
-void setPulseWidth(unsigned int PW) {  // Seleciona a largura de pulso (Pulse Width)
+void setPulseWidth(float PW) {  // Seleciona a largura de pulso (Pulse Width)
     T1_PW = 2 * 1250 * 0.001 * 0.1 * PW;
 }
 
-void SCOMPTPC(unsigned int Tt) {  // Calcula o pulsos necessários para compensar em TP
+void SCOMPTPC() {  // Calcula o pulsos necessários para compensar em TP
     TCOMPTP = T1_limit + (2 * 1250 * 0.001 * 20);
 }
 
-void SCOMPTPWC(unsigned int Tt) {  // Calcula o pulsos necessários para compensar em TPW
+void SCOMPTPWC() {  // Calcula o pulsos necessários para compensar em TPW
     TCOMPTPW = T1_PW + (2 * 1250 * 0.001 * 20);
 }
 
@@ -939,5 +958,34 @@ void STtrain(unsigned int TT) {
         } else {
             Ttrain = TtrainMin;
         }
+    }
+}
+
+void getFeedbackCurrent() {
+    DCSTIM = analogRead(FEEDBACK_CURRENT_PIN);
+    ACSTIM = DCSTIM * 0.004882812 * 1000 / 244;
+#if defined(DEBUG)
+    Serial.println("DCSTIM: " + String(DCSTIM) + " | ACSTIM: " + String(ACSTIM) + " mV");
+#endif
+}
+
+void writeToDAC(unsigned int value) {
+    byte MSB = value >> 4;
+    byte LSB = value << 4;
+    Wire.beginTransmission(MCP4725);  // Joins I2C bus with MCP4725 with 0x61 address
+    Wire.write(CONTROL_BYTE);         // Sends the control byte to I2C
+    Wire.write(MSB);                  // Sends the MSB to I2C
+    Wire.write(LSB);                  // Sends the LSB to I2C
+    Wire.endTransmission();           // Ends the transmission
+}
+
+void setStimulusCurrent(float current) {
+    if (current > 0.0 && current < 21.0) {
+        CTODAC = ((current * 0.196) + 1.08) * 819;
+        STDAC = CTODAC;
+#if defined(DEBUG)
+        Serial.println("Current Set Point: " + String(current) + " mA");
+        Serial.println("STDAC: " + String(STDAC));
+#endif
     }
 }

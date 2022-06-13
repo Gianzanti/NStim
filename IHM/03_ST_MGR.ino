@@ -26,7 +26,7 @@ void ST_MOUNT_SCREEN() {
         VP_StimulusMode.write(STIM_CORTICAL);
         VP_StimulusState.write(STIM_ON);
         VP_SetCurrent.write(STIM_CURRENT);
-        VP_SetPeriod.write(1 / STIM_FREQUENCY);
+        VP_SetPulseWidth.write(STIM_PULSE_WIDTH);
         VP_SetFrequency.write(STIM_FREQUENCY);
         VP_Language.write(STIM_LANG_ENGLISH);
         VP_Backlight.write(STIM_BACKLIGHT);
@@ -173,14 +173,13 @@ void ST_CONFIG_WAVE_POLE() {
 
 #if defined(LCM_ENABLED)
     // monitor changes directly on touch screen
-    if VP_WaveBipolar
-        .available() {
-            bool value = (VP_WaveBipolar.getData() == 1);
-            if (value != STIM_BIPOLAR) {
-                STIM_BIPOLAR = value;
-                EEPROM.write(BIPOLAR_ADDRESS, STIM_BIPOLAR);
-            }
+    if (VP_WaveBipolar.available()) {
+        bool value = (VP_WaveBipolar.getData() == 1);
+        if (value != STIM_BIPOLAR) {
+            STIM_BIPOLAR = value;
+            EEPROM.write(BIPOLAR_ADDRESS, STIM_BIPOLAR);
         }
+    }
 #endif
 
     if (nextState != currentState) {
@@ -218,14 +217,13 @@ void ST_CONFIG_WAVE_PHASE() {
 
 #if defined(LCM_ENABLED)
     // monitor changes directly on touch screen
-    if VP_WavePhase
-        .available() {
-            bool value = (VP_WavePhase.getData() == 1);
-            if (value != STIM_NEGATIVE_PHASE) {
-                STIM_NEGATIVE_PHASE = value;
-                EEPROM.write(NEGATIVE_PHASE_ADDRESS, STIM_NEGATIVE_PHASE);
-            }
+    if (VP_WavePhase.available()) {
+        bool value = (VP_WavePhase.getData() == 1);
+        if (value != STIM_NEGATIVE_PHASE) {
+            STIM_NEGATIVE_PHASE = value;
+            EEPROM.write(NEGATIVE_PHASE_ADDRESS, STIM_NEGATIVE_PHASE);
         }
+    }
 #endif
 
     if (nextState != currentState) {
@@ -270,14 +268,13 @@ void ST_CONFIG_WAVE_TRAIN() {
 
 #if defined(LCM_ENABLED)
     // monitor changes directly on touch screen
-    if VP_TrainEnabled
-        .available() {
-            bool value = (VP_TrainEnabled.getData() == 1);
-            if (value != STIM_TRAIN) {
-                STIM_TRAIN = value;
-                EEPROM.write(TRAIN_ADDRESS, STIM_TRAIN);
-            }
+    if (VP_TrainEnabled.available()) {
+        bool value = (VP_TrainEnabled.getData() == 1);
+        if (value != STIM_TRAIN) {
+            STIM_TRAIN = value;
+            EEPROM.write(TRAIN_ADDRESS, STIM_TRAIN);
         }
+    }
 #endif
 
     // CHECK FOR STATE TRANSITIONS
@@ -315,14 +312,13 @@ void ST_CONFIG_WAVE_TRAIN_DETAILS_PULSES() {
 
 #if defined(LCM_ENABLED)
     // monitor changes directly on touch screen
-    if VP_TrainPulses
-        .available() {
-            byte value = VP_TrainPulses.getData();
-            if (value != STIM_TRAIN_COUNT) {
-                STIM_TRAIN_COUNT = value;
-                EEPROM.write(TRAIN_COUNT_ADDRESS, STIM_TRAIN_COUNT);
-            }
+    if (VP_TrainPulses.available()) {
+        byte value = VP_TrainPulses.getData();
+        if (value != STIM_TRAIN_COUNT) {
+            STIM_TRAIN_COUNT = value;
+            EEPROM.write(TRAIN_COUNT_ADDRESS, STIM_TRAIN_COUNT);
         }
+    }
 #endif
 
     if (nextState != currentState) {
@@ -359,14 +355,13 @@ void ST_CONFIG_WAVE_TRAIN_DETAILS_INTERVAL() {
 
 #if defined(LCM_ENABLED)
     // monitor changes directly on touch screen
-    if VP_TrainInterval
-        .available() {
-            byte value = VP_TrainInterval.getData();
-            if (value != STIM_TRAIN_INTERVAL) {
-                STIM_TRAIN_INTERVAL = value;
-                EEPROM.write(TRAIN_INTERVAL_ADDRESS, STIM_TRAIN_INTERVAL);
-            }
+    if (VP_TrainInterval.available()) {
+        byte value = VP_TrainInterval.getData();
+        if (value != STIM_TRAIN_INTERVAL) {
+            STIM_TRAIN_INTERVAL = value;
+            EEPROM.write(TRAIN_INTERVAL_ADDRESS, STIM_TRAIN_INTERVAL);
         }
+    }
 #endif
 
     if (nextState != currentState) {
@@ -433,7 +428,7 @@ void ST_CONFIG_CURRENT() {
         lastState = currentState;
         clearAllActions();
 
-        btnBlue->setActionDown(setNextState, CONFIG_PERIOD);
+        btnBlue->setActionDown(setNextState, CONFIG_PULSE_WIDTH);
         btnEncoder->setActionDown(setCurrentAtConfig, NULL);
         rtrEncoder->setActionCW(increaseCurrentAtConfig);
         rtrEncoder->setActionCCW(decreaseCurrentAtConfig);
@@ -454,14 +449,13 @@ void ST_CONFIG_CURRENT() {
 
 #if defined(LCM_ENABLED)
     // monitor changes directly on touch screen
-    if VP_SetCurrent
-        .available() {
-            byte value = VP_SetCurrent.getData();
-            if (value != STIM_CURRENT) {
-                STIM_CURRENT = value;
-                EEPROM.write(CURRENT_ADDRESS, STIM_CURRENT);
-            }
+    if (VP_SetCurrent.available()) {
+        byte value = VP_SetCurrent.getData();
+        if (value != STIM_CURRENT) {
+            STIM_CURRENT = value;
+            EEPROM.write(CURRENT_ADDRESS, STIM_CURRENT);
         }
+    }
 #endif
 
     if (nextState != currentState) {
@@ -480,14 +474,14 @@ void ST_CONFIG_PERIOD() {
         rtrEncoder->setActionCCW(decreasePeriodAtConfig);
 
 #if defined(DEBUG)
-        Serial.println("[INFO] Configuring Period. Current Value: " + String(STIM_PERIOD));
+        Serial.println("[INFO] Configuring Period. Current Value: " + String(STIM_PULSE_WIDTH));
 #endif
 
 #if defined(LCM_ENABLED)
         if (!STIM_LANG_ENGLISH) {
-            currentScreen = PID_BR_CONFIG_PERIOD;
+            currentScreen = PID_BR_CONFIG_PULSE_WIDTH;
         } else {
-            currentScreen = PID_EN_CONFIG_PERIOD;
+            currentScreen = PID_EN_CONFIG_PULSE_WIDTH;
         }
         Lcm.changePicId(currentScreen);
 #endif
@@ -495,14 +489,13 @@ void ST_CONFIG_PERIOD() {
 
 #if defined(LCM_ENABLED)
     // monitor changes directly on touch screen
-    if VP_SetPeriod
-        .available() {
-            unsigned int value = VP_SetPeriod.getData();
-            if (value != STIM_PERIOD) {
-                STIM_PERIOD = value;
-                EEPROM.write(PERIOD_ADDRESS, STIM_PERIOD);
-            }
+    if (VP_SetPulseWidth.available()) {
+        unsigned int value = VP_SetPulseWidth.getData();
+        if (value != STIM_PULSE_WIDTH) {
+            STIM_PULSE_WIDTH = value;
+            EEPROM.write(PULSE_WIDTH_ADDRESS, STIM_PULSE_WIDTH);
         }
+    }
 #endif
 
     if (nextState != currentState) {
@@ -535,14 +528,13 @@ void ST_CONFIG_FREQUENCY() {
 
 #if defined(LCM_ENABLED)
     // monitor changes directly on touch screen
-    if VP_SetFrequency
-        .available() {
-            unsigned int value = VP_SetFrequency.getData();
-            if (value != STIM_FREQUENCY) {
-                STIM_FREQUENCY = value;
-                EEPROM.write(FREQUENCY_ADDRESS, STIM_FREQUENCY);
-            }
+    if (VP_SetFrequency.available()) {
+        unsigned int value = VP_SetFrequency.getData();
+        if (value != STIM_FREQUENCY) {
+            STIM_FREQUENCY = value;
+            EEPROM.write(FREQUENCY_ADDRESS, STIM_FREQUENCY);
         }
+    }
 #endif
 
     if (nextState != currentState) {
@@ -636,14 +628,13 @@ void ST_CONFIG_GENERAL_USER_LANG() {
 
 #if defined(LCM_ENABLED)
     // monitor changes directly on touch screen
-    if VP_Language
-        .available() {
-            bool value = (VP_Language.getData() == 1);
-            if (value != STIM_LANG_ENGLISH) {
-                STIM_LANG_ENGLISH = value;
-                EEPROM.write(LANGUAGE_ADDRESS, STIM_LANG_ENGLISH);
-            }
+    if (VP_Language.available()) {
+        bool value = (VP_Language.getData() == 1);
+        if (value != STIM_LANG_ENGLISH) {
+            STIM_LANG_ENGLISH = value;
+            EEPROM.write(LANGUAGE_ADDRESS, STIM_LANG_ENGLISH);
         }
+    }
 #endif
 
     if (nextState != currentState) {
@@ -677,14 +668,13 @@ void ST_CONFIG_GENERAL_USER_SOUND() {
 
 #if defined(LCM_ENABLED)
     // monitor changes directly on touch screen
-    if VP_VolumeLevel
-        .available() {
-            byte value = VP_VolumeLevel.getData();
-            if (value != STIM_SOUNDLEVEL) {
-                STIM_SOUNDLEVEL = value;
-                EEPROM.write(SOUNDLEVEL_ADDRESS, STIM_SOUNDLEVEL);
-            }
+    if (VP_VolumeLevel.available()) {
+        byte value = VP_VolumeLevel.getData();
+        if (value != STIM_SOUNDLEVEL) {
+            STIM_SOUNDLEVEL = value;
+            EEPROM.write(SOUNDLEVEL_ADDRESS, STIM_SOUNDLEVEL);
         }
+    }
 #endif
 
     if (nextState != currentState) {
@@ -717,15 +707,14 @@ void ST_CONFIG_GENERAL_USER_BACKLIGHT() {
 
 #if defined(LCM_ENABLED)
     // monitor changes directly on touch screen
-    if VP_Backlight
-        .available() {
-            byte value = VP_Backlight.getData();
-            if (value != STIM_BACKLIGHT) {
-                STIM_BACKLIGHT = value;
-                VP_Backlight.write(STIM_BACKLIGHT);
-                EEPROM.write(BACKLIGHT_ADDRESS, STIM_BACKLIGHT);
-            }
+    if (VP_Backlight.available()) {
+        byte value = VP_Backlight.getData();
+        if (value != STIM_BACKLIGHT) {
+            STIM_BACKLIGHT = value;
+            VP_Backlight.write(STIM_BACKLIGHT);
+            EEPROM.write(BACKLIGHT_ADDRESS, STIM_BACKLIGHT);
         }
+    }
 #endif
 
     if (nextState != currentState) {
@@ -785,14 +774,13 @@ void ST_CONFIG_GENERAL_MODE_CORTICAL() {
 
 #if defined(LCM_ENABLED)
     // monitor changes directly on touch screen
-    if VP_StimulusMode
-        .available() {
-            bool value = VP_StimulusMode.getData() == 1;
-            if (value != STIM_CORTICAL) {
-                STIM_CORTICAL = value;
-                EEPROM.write(TYPE_CORTICAL_ADDRESS, STIM_CORTICAL);
-            }
+    if (VP_StimulusMode.available()) {
+        bool value = VP_StimulusMode.getData() == 1;
+        if (value != STIM_CORTICAL) {
+            STIM_CORTICAL = value;
+            EEPROM.write(TYPE_CORTICAL_ADDRESS, STIM_CORTICAL);
         }
+    }
 #endif
 
     if (nextState != currentState) {
@@ -825,14 +813,13 @@ void ST_CONFIG_GENERAL_MODE_LOCALIZATION() {
 
 #if defined(LCM_ENABLED)
     // monitor changes directly on touch screen
-    if VP_StimulusMode
-        .available() {
-            bool value = VP_StimulusMode.getData() == 1;
-            if (value != STIM_CORTICAL) {
-                STIM_CORTICAL = value;
-                EEPROM.write(TYPE_CORTICAL_ADDRESS, STIM_CORTICAL);
-            }
+    if (VP_StimulusMode.available()) {
+        bool value = VP_StimulusMode.getData() == 1;
+        if (value != STIM_CORTICAL) {
+            STIM_CORTICAL = value;
+            EEPROM.write(TYPE_CORTICAL_ADDRESS, STIM_CORTICAL);
         }
+    }
 #endif
 
     if (nextState != currentState) {
@@ -949,7 +936,7 @@ void stateLoop() {
             ST_CONFIG_CURRENT();
             break;
 
-        case CONFIG_PERIOD:
+        case CONFIG_PULSE_WIDTH:
             ST_CONFIG_PERIOD();
             break;
 

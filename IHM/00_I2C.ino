@@ -14,7 +14,7 @@ void I2C_receivedData() {
             I2C_CommFinished = true;
         }
 
-        switch (comm_index) {
+        switch (I2C_CommIndex) {
             case 1:  // ERROR
                 STIM_ERROR = Wire.read();
                 if (STIM_ERROR > 0) {
@@ -70,7 +70,7 @@ void I2C_requestedData() {
     // BYTE 4 -> Frequency LSB (1 to 1000)
     byte BYTE_4 = (byte)(STIM_FREQUENCY & 0xFF);
     // BYTE 5 -> Pulse Width (1 a 99) will be divided by 10
-    byte BYTE_5 = STIM_PERIOD;
+    byte BYTE_5 = STIM_PULSE_WIDTH;
     // BYTE 6 -> Train Pulses (1 a 10)
     byte BYTE_6 = STIM_TRAIN_COUNT;
     // BYTE 7 -> Train Interval MSB(1 a 1000)

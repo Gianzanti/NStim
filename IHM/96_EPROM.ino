@@ -18,11 +18,11 @@ void readConfigFromEEPROM() {
     }
 
     // READ PERIOD
-    valueRead = EEPROM.read(PERIOD_ADDRESS);
+    valueRead = EEPROM.read(PULSE_WIDTH_ADDRESS);
     if (valueRead > 0 && valueRead < 100) {
-        STIM_PERIOD = valueRead;
+        STIM_PULSE_WIDTH = valueRead;
 #if defined(DEBUG) && defined(DETAIL)
-        Serial.print("PERIOD: [ADD:" + String(PERIOD_ADDRESS) + "]:");
+        Serial.print("PERIOD: [ADD:" + String(PULSE_WIDTH_ADDRESS) + "]:");
         Serial.print("\t");
         Serial.print(String(valueRead, DEC) + " ms");
         Serial.println("");
@@ -30,8 +30,8 @@ void readConfigFromEEPROM() {
 
     } else {
         // setting default value
-        STIM_PERIOD = 50;
-        EEPROM.write(PERIOD_ADDRESS, STIM_PERIOD);
+        STIM_PULSE_WIDTH = 50;
+        EEPROM.write(PULSE_WIDTH_ADDRESS, STIM_PULSE_WIDTH);
     }
 
     // READ CURRENT
@@ -177,7 +177,7 @@ void readConfigFromEEPROM() {
 
     } else {
         // setting default value
-        STIM_SOUNDLEVEL = STIM_SOUNDLEVEL_MAX/2;
+        STIM_SOUNDLEVEL = STIM_SOUNDLEVEL_MAX / 2;
         EEPROM.write(SOUNDLEVEL_ADDRESS, STIM_SOUNDLEVEL);
     }
 
@@ -193,7 +193,7 @@ void readConfigFromEEPROM() {
 #endif
     } else {
         // setting default value
-        STIM_BACKLIGHT = STIM_BACKLIGHT_MAX/2;
+        STIM_BACKLIGHT = STIM_BACKLIGHT_MAX / 2;
         EEPROM.write(BACKLIGHT_ADDRESS, STIM_BACKLIGHT);
     }
 

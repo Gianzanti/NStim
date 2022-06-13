@@ -167,42 +167,42 @@ void setCurrentAtConfig() {
 };
 
 void increasePeriodAtConfig() {
-    if (STIM_PERIOD + STIM_PERIOD_STEP <= STIM_PERIOD_MAX) {
-        STIM_PERIOD += STIM_PERIOD_STEP;
+    if (STIM_PULSE_WIDTH + STIM_PULSE_WIDTH_STEP <= STIM_PULSE_WIDTH_MAX) {
+        STIM_PULSE_WIDTH += STIM_PULSE_WIDTH_STEP;
 
 #if defined(LCM_ENABLED)
-        VP_SetPeriod.write(STIM_PERIOD);
+        VP_SetPulseWidth.write(STIM_PULSE_WIDTH);
 #endif
 
 #if defined(DEBUG)
-        Serial.println("[CHANGE] Increased Period to: " + String(STIM_PERIOD));
+        Serial.println("[CHANGE] Increased Period to: " + String(STIM_PULSE_WIDTH));
 #endif
     }
 };
 
 void decreasePeriodAtConfig() {
-    if (STIM_PERIOD - STIM_PERIOD_STEP >= STIM_PERIOD_MIN) {
-        STIM_PERIOD -= STIM_PERIOD_STEP;
+    if (STIM_PULSE_WIDTH - STIM_PULSE_WIDTH_STEP >= STIM_PULSE_WIDTH_MIN) {
+        STIM_PULSE_WIDTH -= STIM_PULSE_WIDTH_STEP;
 
 #if defined(LCM_ENABLED)
-        VP_SetPeriod.write(STIM_PERIOD);
+        VP_SetPulseWidth.write(STIM_PULSE_WIDTH);
 #endif
 
 #if defined(DEBUG)
-        Serial.println("[CHANGE] Increased Period to: " + String(STIM_PERIOD));
+        Serial.println("[CHANGE] Increased Period to: " + String(STIM_PULSE_WIDTH));
 #endif
     }
 };
 
 void setPeriodAtConfig() {
 #if defined(LCM_ENABLED)
-    VP_SetPeriod.write(STIM_PERIOD);
+    VP_SetPulseWidth.write(STIM_PULSE_WIDTH);
 #endif
 
-    EEPROM.write(PERIOD_ADDRESS, STIM_PERIOD);
+    EEPROM.write(PULSE_WIDTH_ADDRESS, STIM_PULSE_WIDTH);
 
 #if defined(DEBUG)
-    Serial.println("[SET] Set Period to: " + String(STIM_PERIOD));
+    Serial.println("[SET] Set Period to: " + String(STIM_PULSE_WIDTH));
 #endif
 };
 
