@@ -178,6 +178,7 @@ LcmVar VP_MeasuredCurrent(31);
 LcmVar VP_WaveBipolar(33);
 LcmVar VP_WavePhase(35);
 LcmVar VP_TrainEnabled(37);
+LcmVar VP_WaveForm(39);
 #endif
 
 byte currentState = NONE;
@@ -191,6 +192,7 @@ bool STIM_NEGATIVE_PHASE = false;
 bool STIM_CORTICAL = false;
 bool STIM_LANG_ENGLISH = false;
 
+byte STIM_WAVE_FORM = 0;
 byte STIM_TRAIN_COUNT = 3;
 byte STIM_SOUNDLEVEL = 50;
 byte STIM_BACKLIGHT = 50;

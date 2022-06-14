@@ -3,7 +3,6 @@
 #include <Wire.h>
 
 // ---- Mapeamento de Hardware ----
-
 #define MCP4725 0x61          // DAC I2C ADDRESS
 #define I2C_IHM_ADDRESS 0xA1  // IHM I2C ADDRESS
 #define DAC_PIN A0
@@ -970,8 +969,10 @@ void getFeedbackCurrent() {
 }
 
 void writeToDAC(unsigned int value) {
-    byte MSB = value >> 4;
-    byte LSB = value << 4;
+    byte MSB = 0;
+    MSB |= (value << 8) & 0xFF;
+    byte LSB = 0;
+    LSB |= value & 0xFF;
     Wire.beginTransmission(MCP4725);  // Joins I2C bus with MCP4725 with 0x61 address
     Wire.write(CONTROL_BYTE);         // Sends the control byte to I2C
     Wire.write(MSB);                  // Sends the MSB to I2C
@@ -980,7 +981,7 @@ void writeToDAC(unsigned int value) {
 }
 
 void setStimulusCurrent(float current) {
-    if (current > 0.0 && current < 21.0) {
+    if (current >= 0.1 && current <= 20.0) {
         CTODAC = ((current * 0.196) + 1.08) * 819;
         STDAC = CTODAC;
 #if defined(DEBUG)

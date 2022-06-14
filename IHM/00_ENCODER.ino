@@ -10,7 +10,7 @@ class Rotary {
 
     byte currentState;
     byte previousState;
-    int encoder_direction;
+    // int encoder_direction;
 
    public:
     Rotary() {
@@ -34,7 +34,7 @@ class Rotary {
             if ((millis() - lastDebounceTime) > dbDelay) {
                 lastDebounceTime = millis();
                 if (dat != currentState) {
-                    encoder_direction = 1;  // CW
+                    // encoder_direction = 1;  // CW
 #if defined(DEBUG) && defined(DETAIL)
                     Serial.println(F("[INFO] Rotating clockwise"));
 #endif
@@ -42,7 +42,7 @@ class Rotary {
                         rotaryActionCW(argCW);
                     }
                 } else {
-                    encoder_direction = -1;  // CCW
+                    // encoder_direction = -1;  // CCW
 #if defined(DEBUG) && defined(DETAIL)
                     Serial.println(F("[INFO] Rotating counter clockwise"));
 #endif

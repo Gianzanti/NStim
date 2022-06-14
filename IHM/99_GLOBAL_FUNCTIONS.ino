@@ -74,12 +74,13 @@ void setNextState(byte next) {
 
 void changeWavePole() {
     STIM_BIPOLAR = !STIM_BIPOLAR;
+    EEPROM.write(BIPOLAR_ADDRESS, STIM_BIPOLAR);
+    setWaveFormIndex();
 
 #if defined(LCM_ENABLED)
     VP_WaveBipolar.write(STIM_BIPOLAR);
+    VP_WaveForm.write(STIM_WAVE_FORM);
 #endif
-
-    EEPROM.write(BIPOLAR_ADDRESS, STIM_BIPOLAR);
 
 #if defined(DEBUG)
     if (STIM_BIPOLAR) {
@@ -92,11 +93,13 @@ void changeWavePole() {
 
 void changeWavePhase() {
     STIM_NEGATIVE_PHASE = !STIM_NEGATIVE_PHASE;
+    EEPROM.write(NEGATIVE_PHASE_ADDRESS, STIM_NEGATIVE_PHASE);
+    setWaveFormIndex();
+
 #if defined(LCM_ENABLED)
     VP_WavePhase.write(STIM_NEGATIVE_PHASE);
+    VP_WaveForm.write(STIM_WAVE_FORM);
 #endif
-
-    EEPROM.write(NEGATIVE_PHASE_ADDRESS, STIM_NEGATIVE_PHASE);
 
 #if defined(DEBUG)
     if (STIM_NEGATIVE_PHASE) {
@@ -109,11 +112,13 @@ void changeWavePhase() {
 
 void changeWaveTrain() {
     STIM_TRAIN = !STIM_TRAIN;
+    EEPROM.write(TRAIN_ADDRESS, STIM_TRAIN);
+    setWaveFormIndex();
+
 #if defined(LCM_ENABLED)
     VP_TrainEnabled.write(STIM_TRAIN);
+    VP_WaveForm.write(STIM_WAVE_FORM);
 #endif
-
-    EEPROM.write(TRAIN_ADDRESS, STIM_TRAIN);
 
 #if defined(DEBUG)
     if (STIM_TRAIN) {
@@ -146,7 +151,7 @@ void decreaseCurrentAtConfig() {
         VP_SetCurrent.write(STIM_CURRENT);
 #endif
 
-        //    EEPROM.write(CURRENT_ADDRESS, STIM_CURRENT);
+        EEPROM.write(CURRENT_ADDRESS, STIM_CURRENT);
 
 #if defined(DEBUG)
         Serial.println("[CHANGE] Increased current to: " + String(STIM_CURRENT));
@@ -425,4 +430,36 @@ void setLocalizationMode() {
 #if defined(DEBUG)
     Serial.println(F("[CHANGE] Changed Stimulation Mode to Localization"));
 #endif
+}
+
+void setWaveFormIndex() {
+    if (STIM_BIPOLAR) {
+        if (STIM_NEGATIVE_PHASE) {
+            if (STIM_TRAIN) {
+                STIM_WAVE_FORM = 0;  // BIPOLAR - NEGATIVE - TRAIN
+            } else {
+                STIM_WAVE_FORM = 1;  // BIPOLAR - NEGATIVE - UNIQUE
+            }
+        } else {
+            if (STIM_TRAIN) {
+                STIM_WAVE_FORM = 2;  // BIPOLAR - POSITIVE - TRAIN
+            } else {
+                STIM_WAVE_FORM = 3;  // BIPOLAR - POSITIVE - UNIQUE
+            }
+        }
+    } else {
+        if (STIM_NEGATIVE_PHASE) {
+            if (STIM_TRAIN) {
+                STIM_WAVE_FORM = 4;  // MONOPOLAR - NEGATIVE - TRAIN
+            } else {
+                STIM_WAVE_FORM = 5;  // MONOPOLAR - NEGATIVE - UNIQUE
+            }
+        } else {
+            if (STIM_TRAIN) {
+                STIM_WAVE_FORM = 6;  // MONOPOLAR - POSITIVE - TRAIN
+            } else {
+                STIM_WAVE_FORM = 7;  // MONOPOLAR - POSITIVE - UNIQUE
+            }
+        }
+    }
 }
