@@ -16,7 +16,7 @@ class Rotary {
     Rotary() {
         currentState = 0;
         previousState = 0;
-        encoder_direction = 0;
+//        encoder_direction = 0;
         lastDebounceTime = 0;
         dbDelay = 100;
     }
@@ -34,14 +34,6 @@ class Rotary {
             if ((millis() - lastDebounceTime) > dbDelay) {
                 lastDebounceTime = millis();
                 if (dat != currentState) {
-                    // encoder_direction = 1;  // CW
-#if defined(DEBUG) && defined(DETAIL)
-                    Serial.println(F("[INFO] Rotating clockwise"));
-#endif
-                    if (rotaryActionCW != NULL) {
-                        rotaryActionCW(argCW);
-                    }
-                } else {
                     // encoder_direction = -1;  // CCW
 #if defined(DEBUG) && defined(DETAIL)
                     Serial.println(F("[INFO] Rotating counter clockwise"));
@@ -49,6 +41,14 @@ class Rotary {
                     if (rotaryActionCCW != NULL) {
                         rotaryActionCCW(argCCW);
                     }
+                } else {
+                    // encoder_direction = 1;  // CW
+#if defined(DEBUG) && defined(DETAIL)
+                    Serial.println(F("[INFO] Rotating clockwise"));
+#endif
+                    if (rotaryActionCW != NULL) {
+                        rotaryActionCW(argCW);
+                    }                    
                 }
             }
             previousState = currentState;

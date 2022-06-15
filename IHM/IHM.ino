@@ -5,8 +5,8 @@
 
 // INCLUDE LIBRARIES
 #if defined(LCM_ENABLED)
-#include <SoftwareSerial.h>
 #include <UnicViewAD.h>
+#include <SoftwareSerial.h>
 #endif
 
 #if defined(I2C_ENABLED)
@@ -22,23 +22,48 @@
 #define INPUT_ROTARY_DAT PIN_A6  // Rotary Encoder Input Data Pin
 
 // LEDS
-#define LED_R 5  //
-#define LED_G 3  //
+#define LED_R 3  //
+#define LED_G 5  //
 #define LED_B 6  //
 
 // BUTTONS
-#define BTN_START 7
-#define BTN_STOP 8
-#define BTN_ONOFF 4
-#define BTN_ENCODER 2
+#define BTN_START 4
+#define BTN_STOP 2
+#define BTN_ONOFF 7
+#define BTN_ENCODER 8
 
 // COMMUNICATION
-#define SOFT_TX 11
-#define SOFT_RX 10
+#define SOFT_TX 10
+#define SOFT_RX 11
 #define BAUD_RATE 115200
 //#define IHM
 #define I2C_IHM_ADDRESS 0xA1  // IHM I2C ADDRESS
 #define I2C_ANSWER_SIZE 2
+
+// GLOBAL VARIABLES
+#if defined(LCM_ENABLED)
+SoftwareSerial softSerial(SOFT_RX, SOFT_TX);
+LCM Lcm(softSerial);  // Inicializa o LCM com o nome "Lcm" e com o parâmetro da Serial de comunicação com o Display
+LcmVar VP_ErrorControl(1);
+LcmVar VP_BatteryLevel(3);
+LcmVar VP_VolumeLevel(5);
+LcmVar VP_StimulusMode(7);
+LcmVar VP_StimulusState(11);
+LcmVar VP_SetCurrent(13);
+LcmVar VP_SetPulseWidth(15);
+LcmVar VP_SetFrequency(17);
+LcmVar VP_MeasuredCharge(19);
+LcmVar VP_MeasuredImpedance(21);
+LcmVar VP_Language(23);
+LcmVar VP_Backlight(25);
+LcmVar VP_TrainPulses(27);
+LcmVar VP_TrainInterval(29);
+LcmVar VP_MeasuredCurrent(31);
+LcmVar VP_WaveBipolar(33);
+LcmVar VP_WavePhase(35);
+LcmVar VP_TrainEnabled(37);
+LcmVar VP_WaveForm(39);
+#endif
 
 // UNICVIEW SCREENS
 #define PID_INTRO 0
@@ -156,30 +181,7 @@
 #define CONFIG_GENERAL_MODE_EXIT 0x19
 #define CONFIG_GENERAL_EXIT 0x1A
 
-// GLOBAL VARIABLES
-#if defined(LCM_ENABLED)
-SoftwareSerial softSerial(SOFT_RX, SOFT_TX);
-LCM Lcm(softSerial);  // Inicializa o LCM com o nome "Lcm" e com o parâmetro da Serial de comunicação com o Display
-LcmVar VP_ErrorControl(1);
-LcmVar VP_BatteryLevel(3);
-LcmVar VP_VolumeLevel(5);
-LcmVar VP_StimulusMode(7);
-LcmVar VP_StimulusState(11);
-LcmVar VP_SetCurrent(13);
-LcmVar VP_SetPulseWidth(15);
-LcmVar VP_SetFrequency(17);
-LcmVar VP_MeasuredCharge(19);
-LcmVar VP_MeasuredImpedance(21);
-LcmVar VP_Language(23);
-LcmVar VP_Backlight(25);
-LcmVar VP_TrainPulses(27);
-LcmVar VP_TrainInterval(29);
-LcmVar VP_MeasuredCurrent(31);
-LcmVar VP_WaveBipolar(33);
-LcmVar VP_WavePhase(35);
-LcmVar VP_TrainEnabled(37);
-LcmVar VP_WaveForm(39);
-#endif
+
 
 byte currentState = NONE;
 byte lastState = NONE;

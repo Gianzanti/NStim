@@ -6,6 +6,8 @@ void ST_LOADING_FROM_EPROM() {
         Serial.println("[INFO] Loading data from EPROM");
 #endif
         readConfigFromEEPROM();
+        setWaveFormIndex();
+        
     }
 
     if (nextState != currentState) {
@@ -36,7 +38,7 @@ void ST_MOUNT_SCREEN() {
         VP_WaveBipolar.write(STIM_BIPOLAR);
         VP_WavePhase.write(STIM_NEGATIVE_PHASE);
         VP_TrainEnabled.write(STIM_TRAIN);
-
+        VP_WaveForm.write(STIM_WAVE_FORM);
         VP_ErrorControl.write(STIM_ERROR);
         VP_BatteryLevel.write(STIM_MEASURED_BATTERY);
         VP_MeasuredImpedance.write(STIM_MEASURED_IMPEDANCE);
@@ -69,6 +71,15 @@ void ST_READY() {
 
 #if defined(DEBUG)
         Serial.println("[INFO] Ready to stimulate");
+#endif
+
+#if defined(LCM_ENABLED)
+        if (!STIM_LANG_ENGLISH) {
+            currentScreen = PID_BR_MAIN;
+        } else {
+            currentScreen = PID_EN_MAIN;
+        }
+        Lcm.changePicId(currentScreen);
 #endif
     }
 

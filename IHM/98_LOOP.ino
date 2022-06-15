@@ -1,3 +1,4 @@
+// byte countLoops = 0;
 void loop() {
     btnGreen->loop();
     btnRed->loop();
@@ -5,5 +6,9 @@ void loop() {
     btnEncoder->loop();
     rtrEncoder->loop();
     stateLoop();
-    screenMonitor();
+    // countLoops++;
+    //    if (countLoops > 30) {
+    //      screenMonitor();
+    //      countLoops = 0;
+    //    }
 }

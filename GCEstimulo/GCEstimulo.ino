@@ -12,6 +12,8 @@
 #define LED_B 6
 #define LED_G 5
 #define LED_R 3
+#define BATTERY_LEVEL A0
+
 
 // ----- Constantes  --------
 #define T1_init 0
@@ -80,6 +82,7 @@ ISR(TIMER1_COMPA_vect) {
     TCNT1 = T1_init;  // reinicializa TIMER1
     updateTP();
     updateState();
+    updateBatteryLevel();
 }
 
 void setup() {
@@ -94,7 +97,8 @@ void setup() {
     pinMode(LED_R, OUTPUT);
     pinMode(LED_G, OUTPUT);
     pinMode(LED_B, OUTPUT);
-
+    pinMode(BATTERY_LEVEL, INPUT);
+    
     analogWrite(LED_R, 255);
     analogWrite(LED_G, 100);
     analogWrite(LED_B, 255);
@@ -912,6 +916,24 @@ void updateState() {
             break;
     }
 }
+
+void updateBatteryLevel(){
+  int sensorValue = analogRead(BATTERY_LEVEL);
+  float voltage = sensorValue * (5.0 / 1023.0);
+  float charge = 3000 - (9523.995 - (2217.755 * voltage));
+
+  if (charge > 2500) {
+      I2C_BATTERY_LEVEL = 3;
+  } else if (charge > 2000) {
+      I2C_BATTERY_LEVEL = 2;
+  } else if (charge > 1200) {
+      I2C_BATTERY_LEVEL = 1;
+  } else {
+      I2C_BATTERY_LEVEL = 0;
+  }
+
+}
+
 
 void setFrequency(unsigned int freq) {  // Seleciona a frequência
     T1_limit = fator / freq;

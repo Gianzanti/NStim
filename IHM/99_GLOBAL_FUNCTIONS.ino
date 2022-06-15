@@ -462,4 +462,12 @@ void setWaveFormIndex() {
             }
         }
     }
+
+#if defined(DEBUG)
+    Serial.println("[CHANGE] Changed WaveForm to: " + String(STIM_WAVE_FORM));
+#endif    
+
+#if defined(LCM_ENABLED)
+    VP_WaveForm.write(STIM_WAVE_FORM);
+#endif
 }
